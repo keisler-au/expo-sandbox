@@ -1,93 +1,83 @@
 import React, { useContext, memo, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, FlatList } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, FlatList, Dimensions } from 'react-native';
 import { GridDataContext } from './GridDataProvider';
+import { FlashList } from "@shopify/flash-list";
 
 
-const GRID_CONTAINER_SIZE = 250;
-const GRID_CONTAINER_GAP = 15;
-
-
-const GridSquare = memo(({ squareData, onPress, gridType}) => {
-    return (
-    gridType === "template"
-        ? <View style={styles().square}><Text>{squareData}</Text></View>
-        : <TouchableOpacity onPress={onPress} style={styles(raiseSquare).square}>
-            <Text>{squareData}</Text>
-        </TouchableOpacity> 
-    )});
-    
+export const GRID_SIZE = 250
+const screenWidth = Dimensions.get("window").width;
 
 const Grid = memo(({ gridData, gridType, onSquarePress }) => {
-    // const { gridData, setGridData } = useContext(GridDataContext);
-    // TODO: Does it impact performance and if so how to conditionally pass in onPress
-    const renderSquare = useCallback(({ item, index }) => (
-        // <GridSquare
-        //     key={index}
-        //     squareData={item}
-        //     onPress={() => onSquarePress(index)}
-        //     gridType={gridType}
-        // />
-        <Text>Yep</Text>
-    ), [onSquarePress]);
-    const keyExtractor = (item, index) => Array.isArray(item) ? item[index] : item
-    const renderRow = useCallback(({ item }) => {
-        return (<Text>Yep</Text>
-        // return (
-        // <FlatList
-        //     data={item}
-        //     renderItem={renderSquare}
-        //     keyExtractor={keyExtractor}
-        //     horizontal
-        //     showsHorizontalScrollIndicator={false}
-        //     scrollEnabled={false}
-        //     // getItemLayout={(data, index) => ({
-        //     //     length: GRID_CONTAINER_SIZE/item.length,
-        //     //     offset: GRID_CONTAINER_SIZE/item.length * index,
-        //     //     index,
-        //     // })}
-        // />
-    )}, []);
-    return <Text>Yep</Text>
+
     return (
-        <FlatList
-            data={gridData}
-            renderItem={renderRow}
-            keyExtractor={keyExtractor}
-            style={styles().gridContainer}
-            showsVerticalScrollIndicator={false}
-            // getItemLayout={(data, index) => ({
-            //     length: GRID_CONTAINER_SIZE + 2,
-            //     offset: (GRID_CONTAINER_SIZE + 2) * index,
-            //     index,
-            // })}
-        />
+        <View style={[styles().gridContainer, {flexWrap: "wrap"}]}>
+        {gridData.map((item, index) => <View key={index} style={[styles().square]}><Text>{item}</Text></View>)}
+        </View>
+    
+)
+
+
+
+    const keyExtractor = (item, index) => {
+        return (item + index)}
+    const renderSquare = useCallback(({ item, index }) => {
+        item === "B1" && console.log("hello ")
+        return (
+            gridType === "template"
+                ? <View style={styles().square}><Text>{item}</Text></View>
+                : <TouchableOpacity
+                    onPress={() => onSquarePress(index)} 
+                    style={styles(raiseSquare).square}
+                    >
+                        <Text>{squareData}</Text>
+                    </TouchableOpacity> 
+        )
+    }, [])
+    
+    return (
+        <View style={styles().gridContainer}>
+            <FlashList
+                data={gridData}
+                keyExtractor={keyExtractor}
+                showsVerticalScrollIndicator={false}
+                renderItem={renderSquare}
+                numColumns={5}
+                estimatedItemSize={100}
+            />
+        </View>
     );
 });
 
 const styles = (raiseSquare=null, rows=5, columns=5) =>
   StyleSheet.create({
     gridContainer: {
-        margin: "auto",
-        height: GRID_CONTAINER_SIZE + 2,
-        width: GRID_CONTAINER_SIZE + 2,
+        position: "absolute",
+        // minWidth: "100%",
+        // margin: "auto",
+        left: screenWidth/2 - GRID_SIZE/2,
+        right:"25%",
+        height: GRID_SIZE + 2,
+        width: GRID_SIZE + 2,
         borderWidth: 1,
         // alignSelf: "center",
         borderColor: "black",
+        backgroundColor: "white",
+        // zIndex: 100
     },
     square: {
-        height: GRID_CONTAINER_SIZE/rows,
-        width: GRID_CONTAINER_SIZE/columns,
+        height: GRID_SIZE/rows,
+        width: GRID_SIZE/columns,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        backgroundColor: raiseSquare ? '#FFF' : '#F5F5F5',
+        // backgroundColor: raiseSquare ? '#FFF' : '#F5F5F5',
         elevation: raiseSquare ? 5 : 0,
         shadowColor: raiseSquare ? 'rgba(0, 0, 0, 0.1)' : 'transparent',
         shadowOffset: raiseSquare ? { width: 0, height: 3 } : null,
         shadowOpacity: raiseSquare ? 0.2 : 0,
+        // backgroundColor: "grey",
+        // zIndex: 100
     }
   });
 
 export default Grid;
-
-export {GRID_CONTAINER_SIZE, GRID_CONTAINER_GAP}

@@ -2,12 +2,12 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import HorizontalSets from './HorizontalSets';
+import HorizontalSandbox from './HorizontalSandbox';
 import VerticalCards from "./VerticalCards"
 import GridDataProvider  from './GridDataProvider';
 import TemplateGrid  from './GridTypes';
 import CarouselAndGridExpansion from './CarouselAndGridExpansion';
-import CarouselSandbox from './HorizontalSets';
+import CarouselSandbox from './HorizontalSandbox';
 import CardStackAnimation from './VerticalSanbox';
 
 // const initialGridData = [    
@@ -32,7 +32,7 @@ const Home = () => {
           <Ionicons name="settings-outline" size={30} color="black" />
         </TouchableOpacity>
       </View>
-      {/* <HorizontalSets /> */}
+      {/* <HorizontalSandbox /> */}
       <VerticalCards />
       {/* <GridDataProvider initialGridData={initialGridData} cardId={1}>
         <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
