@@ -24,14 +24,14 @@ const Home = () => {
 
   return (
     <>
-      <View style={styles.header}>``
+      {/* <View style={styles.header}>``
         <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
           <Ionicons name="person-circle-outline" size={30} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
           <Ionicons name="settings-outline" size={30} color="black" />
         </TouchableOpacity>
-      </View>
+      </View> */}
       {/* <HorizontalSandbox /> */}
       <VerticalCards />
       {/* <GridDataProvider initialGridData={initialGridData} cardId={1}>

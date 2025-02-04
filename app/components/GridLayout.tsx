@@ -15,47 +15,16 @@ const Grid = memo(({ gridData, gridType, onSquarePress }) => {
         </View>
     
 )
-
-
-
-    const keyExtractor = (item, index) => {
-        return (item + index)}
-    const renderSquare = useCallback(({ item, index }) => {
-        item === "B1" && console.log("hello ")
-        return (
-            gridType === "template"
-                ? <View style={styles().square}><Text>{item}</Text></View>
-                : <TouchableOpacity
-                    onPress={() => onSquarePress(index)} 
-                    style={styles(raiseSquare).square}
-                    >
-                        <Text>{squareData}</Text>
-                    </TouchableOpacity> 
-        )
-    }, [])
-    
-    return (
-        <View style={styles().gridContainer}>
-            <FlashList
-                data={gridData}
-                keyExtractor={keyExtractor}
-                showsVerticalScrollIndicator={false}
-                renderItem={renderSquare}
-                numColumns={5}
-                estimatedItemSize={100}
-            />
-        </View>
-    );
 });
 
-const styles = (raiseSquare=null, rows=5, columns=5) =>
+export const gridStyles = (raiseSquare=null, rows=5, columns=5) =>
   StyleSheet.create({
     gridContainer: {
-        position: "absolute",
+        // position: "absolute",
         // minWidth: "100%",
         // margin: "auto",
-        left: screenWidth/2 - GRID_SIZE/2,
-        right:"25%",
+        // left: screenWidth/2 - GRID_SIZE/2,
+        // right:"25%",
         height: GRID_SIZE + 2,
         width: GRID_SIZE + 2,
         borderWidth: 1,
