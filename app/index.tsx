@@ -10,8 +10,8 @@ import { useNavigation } from "expo-router";
 const Stack = createStackNavigator();
 
 export default function Index() {
-  // const navigation = useNavigation();
-  // navigation.setOptions({ headerShown: false });
+  const navigation = useNavigation();
+  navigation.setOptions({ headerShown: false });
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={Home} />

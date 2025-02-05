@@ -1,7 +1,5 @@
-import React, { useContext, memo, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, FlatList, Dimensions } from 'react-native';
-import { GridDataContext } from './GridDataProvider';
-import { FlashList } from "@shopify/flash-list";
+import React, { memo,} from 'react';
+import { View, StyleSheet, Text, FlatList, Dimensions } from 'react-native';
 
 
 export const GRID_SIZE = 250
@@ -10,7 +8,7 @@ const screenWidth = Dimensions.get("window").width;
 const Grid = memo(({ gridData, gridType, onSquarePress }) => {
 
     return (
-        <View style={[styles().gridContainer, {flexWrap: "wrap"}]}>
+        <View style={[styles().gridContainer]}>
         {gridData.map((item, index) => <View key={index} style={[styles().square]}><Text>{item}</Text></View>)}
         </View>
     
@@ -25,6 +23,7 @@ export const gridStyles = (raiseSquare=null, rows=5, columns=5) =>
         // margin: "auto",
         // left: screenWidth/2 - GRID_SIZE/2,
         // right:"25%",
+        flexWrap: "wrap",
         height: GRID_SIZE + 2,
         width: GRID_SIZE + 2,
         borderWidth: 1,

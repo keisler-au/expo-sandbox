@@ -20,7 +20,8 @@ import CardStackAnimation from './VerticalSanbox';
 
 
 const Home = () => {
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
+  // navigation.setOptions({ headerShown: false });
 
   return (
     <>

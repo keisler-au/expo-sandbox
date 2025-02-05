@@ -240,7 +240,7 @@ const bingoGames2 = [
 const bingoGames = {
     "Social": bingoGames2[0],
     "Fitness": bingoGames2[1],
-    "Icebreakers": bingoGames2[2],
+    "Ice Breakers": bingoGames2[2],
     "Travel": bingoGames2[3]
 }
 
