@@ -42,6 +42,9 @@ const GridDataProvider = ({initialGridData, cardId, children}) => {
     //     }
     //     }));
     // };
+    // useEffect(() => {
+    //     console.log("gridData updated", gridData);
+    // }, [gridData]);
 
     return (
         <GridDataContext.Provider value={{ gridData, setGridData }}>
