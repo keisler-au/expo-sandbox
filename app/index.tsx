@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import Home from './components/Home';
 import Profile from './components/Profile';
@@ -11,7 +12,11 @@ const Stack = createStackNavigator();
 
 export default function Index() {
   const navigation = useNavigation();
-  navigation.setOptions({ headerShown: false });
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]); 
+
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={Home} />
