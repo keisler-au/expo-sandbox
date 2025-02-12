@@ -36,43 +36,107 @@ const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
 const MAIN_SQUARE_COLOR = 'rgb(50, 50, 50)';
 const MAIN_FONT_FAMILY = 'Verdana';
 
+
+
+const HomeHeaderIcons = () => {
+  const navigation = useNavigation();
+  return ( 
+    <View style={styles.navBar}>
+      <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+        <Ionicons
+          name="person-circle-outline"
+          size={30}
+          color={SCREEN_TEXT_COLOR}
+        />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+        <Ionicons
+          name="settings-outline"
+          size={30}
+          color={SCREEN_TEXT_COLOR}
+        />
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+const GridTemplate = () => (
+  Array.from({ length: 5 }).map((_, rowIndex) => (
+    <View key={rowIndex} style={styles.gridsetHeaderRow}>
+      {Array.from({ length: 5 }).map((_, colIndex) => (
+        <View key={colIndex} style={styles.gridsetHeaderSquare} />
+      ))}
+    </View>
+  ))
+)
+
+const GridsetHeaderBackground = () => (
+  <Svg
+    height={GRIDSET_HEADER_SIZE}
+    width={GRIDSET_HEADER_SIZE}
+    style={{ position: 'absolute', borderRadius: 50 }}>
+    <Defs>
+      <RadialGradient id="grad" cx="50%" cy="50%" r="90%">
+        <Stop offset="20%" stopColor="rgb(14, 14, 15)" stopOpacity="1" />
+        <Stop offset="100%" stopColor="rgb(79,77,77)" stopOpacity="1" />
+      </RadialGradient>
+    </Defs>
+    <Rect width="100%" height="100%" fill="url(#grad)" rx="22" ry="22" />
+  </Svg>
+)
+
+const VerticalReel = ({ collapseReel, expandedGridset }) => {
+  const navigation = useNavigation();
+  
+  const handleNavigation = (event) => (
+    navigation.navigate('Publish', { gridIndex: event.target.props["data-gameIndex"] })
+  )
+
+  return (
+    <Pressable style={styles.pressableScreen} onPress={collapseReel}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={verticalReelStyles(expandedGridset.current.length)}>
+          {expandedGridset.current.map((grid, gridIndex) => { 
+            return (
+              <TouchableOpacity
+                key={gridIndex}
+                activeOpacity={1}
+                style={[gridStyles().gridContainer, { flexWrap: 'wrap' }]}
+                data-gridIndex={gridIndex}
+                onPress={handleNavigation}>
+                {grid.map((square, squareIndex) => (
+                  <View key={squareIndex} style={[gridStyles().square]}>
+                    <Text style={gridStyles().text}>{square}</Text>
+                  </View>
+                ))}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </Pressable>
+  )
+}
+
 const Home = memo(() => {
   const [expanded, setExpanded] = useState(false);
   const expandedGridset = useRef();
-  const navigation = useNavigation();
 
   const isVerticalReel = (gridset) => {
     expandedGridset.current = bingoGames[gridset];
     setExpanded(!expanded);
   };
-  const handleNavigation = () => navigation.navigate('Profile');
+
 
   const renderGridsetHeader = ({ item }) => {
     return (
       <TouchableOpacity
         onPress={() => isVerticalReel(item)}
         activeOpacity={1}
-        style={styles.gridsetHeader}>
-        <Svg
-          height={GRIDSET_HEADER_SIZE}
-          width={GRIDSET_HEADER_SIZE}
-          style={{ position: 'absolute', borderRadius: 50 }}>
-          <Defs>
-            <RadialGradient id="grad" cx="50%" cy="50%" r="90%">
-              <Stop offset="20%" stopColor="rgb(14, 14, 15)" stopOpacity="1" />
-              <Stop offset="100%" stopColor="rgb(79,77,77)" stopOpacity="1" />
-            </RadialGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill="url(#grad)" rx="22" ry="22" />
-        </Svg>
-
-        {Array.from({ length: 5 }).map((_, rowIndex) => (
-          <View key={rowIndex} style={styles.gridsetHeaderRow}>
-            {Array.from({ length: 5 }).map((_, colIndex) => (
-              <View key={colIndex} style={styles.gridsetHeaderSquare} />
-            ))}
-          </View>
-        ))}
+        style={styles.gridsetHeader}
+      >
+        <GridsetHeaderBackground />
+        <GridTemplate />
         <View style={styles.gridsetHeaderLabelContainer}>
           <Text style={styles.gridsetHeaderLabel}>{item}</Text>
         </View>
@@ -82,22 +146,7 @@ const Home = memo(() => {
 
   return (
     <SafeAreaView style={styles.background}>
-      <View style={styles.navBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Ionicons
-            name="person-circle-outline"
-            size={30}
-            color={SCREEN_TEXT_COLOR}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Ionicons
-            name="settings-outline"
-            size={30}
-            color={SCREEN_TEXT_COLOR}
-          />
-        </TouchableOpacity>
-      </View>
+      <HomeHeaderIcons />
       <Carousel
         loop
         width={width}
@@ -110,31 +159,12 @@ const Home = memo(() => {
         windowSize={2}
         renderItem={renderGridsetHeader}
       />
-      {expanded ? (
-        <Pressable style={styles.pressableScreen} onPress={isVerticalReel}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={verticalReelStyles(expanded, expandedGridset)}>
-              {expandedGridset.current.map((grid, gridIndex) => {
-                return (
-                  <TouchableOpacity
-                    key={gridIndex}
-                    activeOpacity={1}
-                    style={[gridStyles().gridContainer, { flexWrap: 'wrap' }]}
-                    onPress={handleNavigation}>
-                    {grid.map((square, squareIndex) => (
-                      <View key={squareIndex} style={[gridStyles().square]}>
-                        <Text style={gridStyles().text}>{square}</Text>
-                      </View>
-                    ))}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-        </Pressable>
-      ) : (
-        <VerificationCodeInput />
-      )}
+      {expanded 
+        ? <VerticalReel 
+          collapseReel={isVerticalReel} 
+          expandedGridset={expandedGridset}
+        /> 
+        : <VerificationCodeInput />}
     </SafeAreaView>
   );
 });
@@ -207,15 +237,12 @@ const styles = StyleSheet.create({
   },
 });
 
-const verticalReelStyles = (expanded, expandedGridset) =>
+const verticalReelStyles = (numOfGrids) =>
   StyleSheet.create({
     backgroundColor: SCREEN_BACKGROUND_COLOR,
     paddingTop: 120,
     paddingBottom: 60,
-    minHeight: expanded
-      ? expandedGridset.current.length * (GRID_CONTAINER_SIZE + 10)
-      : GRID_CONTAINER_SIZE,
-    // justifyContent: "space-between",
+    minHeight: numOfGrids * (GRID_CONTAINER_SIZE + 10),
     gap: 90,
     alignItems: 'center',
   });

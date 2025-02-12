@@ -48,7 +48,6 @@ const VerificationCodeInput = () => {
 
   const handleSubmit = (enteredCode: string) => {
     setSubmit(true)
-    // navigation.navigate('Profile');
   };
 
   const handleCollapse = () => {
@@ -93,8 +92,9 @@ const VerificationCodeInput = () => {
             />
         ))}
       </View>
-      {submit && <TouchableOpacity
-        onPress={() => navigation.navigate("Profile")}
+      {
+        submit && <TouchableOpacity
+        onPress={() => navigation.navigate("Publish")}
         activeOpacity={1}
         style={styles.button}
         ><Text style={styles.buttonText}>Join Game</Text>
