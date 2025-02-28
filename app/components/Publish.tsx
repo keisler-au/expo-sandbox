@@ -1,78 +1,150 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import bingoGames from '../templateFixtures';
 
-const gridOptions = [
-  { label: '5x5', value: [5, 5] },
-  { label: '4x5', value: [4, 5] },
-  { label: '4x4', value: [4, 4] },
-  { label: '3x4', value: [3, 4] },
-  { label: '3x3', value: [3, 3] },
-];
+
+const MAIN_FONT_FAMILY = 'Verdana'
+
+const gridOptions = ['5x5', '4x5', '4x4', '3x4', '3x3'];
 
 const Publish = ({ route }) => {
-  const [selectedGrid, setSelectedGrid] = useState([5, 5]);
-  const [rows, cols] = selectedGrid;
+  const navigation = useNavigation();
+  const [selectedGridSize, setSelectedGridSize] = useState("5x5");
+  const [rows, setRows] = useState(5);
+  const [cols, setCols] = useState(5);
 
-  const game = bingoGames[route.params.gameIndex].slice(0, rows)
+  const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
+    route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows)
+  );
+  const [game, setGame] = useState(reformattedInitialGame)
 
-//   // Generate the grid data
-//   const gridData = Array.from({ length: rows * cols }, (_, index) => index + 1);
+  const selectGridSize = (item) => {
+    setRows(item[0]);
+    setCols(item.slice(-1));
+    setSelectedGridSize(item)
+  }
+  const changeGridText = (input, row, col) => {
+    let editedGame = [...game]
+    editedGame[row][col] = input 
+    setGame(editedGame)
+  }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screenContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+        <Ionicons name="home-outline" size={30} style={styles.homeIcon} />
+        {/* <FontAwesome5 name="hand-middle-finger" size={50} style={styles.homeIcon} /> */}
+      </TouchableOpacity>
+      <View style={[styles.gridContainer, {bottom: rows === cols ? "40%" : "45%"}]}>
+        {Array.from({length: rows}).map((_, rowIndex) => (
+          <View key={rowIndex} style={styles.gridRow}>
+            {Array.from({length: cols}).map((_, colIndex) => {
+              return(
+                <TextInput
+                  key={colIndex + rowIndex}
+                  multiline={true}
+                  submitBehavior="blurAndSubmit"
+                  style={[styles.gridText, {
+                    height: rows === cols ? (350 / rows) : 280 / rows,
+                    width: 350 / cols,
+                  }]}
+                  value={game[rowIndex][colIndex]}
+                  onChangeText={(input) => changeGridText(input, rowIndex, colIndex)}
+                />
+              )
+            })}
+          </View>
+        ))}
+      </View>
+      <View style={styles.pickerHelper} />
       <Picker
-        selectedValue={selectedGrid}
-        onValueChange={(itemValue) => setSelectedGrid(itemValue)}
+        selectedValue={selectedGridSize}
+        onValueChange={selectGridSize}
         style={styles.picker}
       >
         {gridOptions.map((option) => (
-          <Picker.Item key={option.label} label={option.label} value={option.value} />
+          <Picker.Item key={option} label={option} value={option} />
         ))}
       </Picker>
-
-      <View style={styles.gridContainer}>
-        <FlatList
-          data={game}
-          numColumns={cols}
-          key={cols} // Important: Forces re-render on column change
-          renderItem={({ item }) => (
-            <View style={styles.gridItem}>
-              <Text style={styles.gridText}>{item}</Text>
-            </View>
-          )}
-        />
-      </View>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Home")}
+        activeOpacity={1}
+        style={styles.button}
+      >
+        <Text style={styles.buttonText}>Publish</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  screenContainer: {
+    position: "relative",
+    height: "100%",
+    backgroundColor: "#FAF9F6",
   },
-  picker: {
-    width: 150,
-    height: 50,
+  homeIcon: {
+    position: "absolute",
+    top: 0,
+    padding: "5%",
   },
   gridContainer: {
-    marginTop: 20,
-  },
-  gridItem: {
-    width: 50, // Adjust as needed
-    height: 50, // Adjust as needed
-    backgroundColor: '#ccc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 5,
+    position: "absolute",
+    right: "5%",
+    left: "5%",
+    backgroundColor: "#FAF9F6",
+    zIndex: 2,
   },
   gridText: {
     fontSize: 18,
+    textAlign: "center",
     fontWeight: 'bold',
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "black",
+  },
+  pickerHelper: {
+    height: 50,
+    position: "absolute",
+    bottom: "37%",
+    left: "35%",
+    right: "35%",
+    backgroundColor: "#FAF9F6",
+    zIndex: 1,
+  },
+  picker: {
+    position: "absolute",
+    left: "35%",
+    right: "35%",
+    bottom: "22%",
+    height: 165,
+    marginVertical: 0,
+    overflow: "hidden",
+    backgroundColor: "#FAF9F6",
+  },
+  gridRow: {
+    flexDirection: "row",
+  },
+  button: {
+    position: "absolute",
+    bottom: "7%",
+    left: "20%",
+    right: "20%",
+    borderWidth: 1,
+    borderColor: "black",
+    borderRadius: 8,
+    padding: 8,
+    opacity: 0.5,
+  },
+  buttonText: {
+    textAlign: "center",
+    color: "black",
+    fontFamily: MAIN_FONT_FAMILY,
+    fontSize: 23,
   },
 });
+
 
 export default Publish;

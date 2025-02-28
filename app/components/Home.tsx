@@ -88,9 +88,9 @@ const GridsetHeaderBackground = () => (
 const VerticalReel = ({ collapseReel, expandedGridset }) => {
   const navigation = useNavigation();
   
-  const handleNavigation = (event) => (
-    navigation.navigate('Publish', { gridIndex: event.target.props["data-gameIndex"] })
-  )
+  const handleNavigation = (gameIndex) => (
+    navigation.navigate('Publish', { game: expandedGridset.current[gameIndex] }) 
+  );
 
   return (
     <Pressable style={styles.pressableScreen} onPress={collapseReel}>
@@ -102,8 +102,7 @@ const VerticalReel = ({ collapseReel, expandedGridset }) => {
                 key={gridIndex}
                 activeOpacity={1}
                 style={[gridStyles().gridContainer, { flexWrap: 'wrap' }]}
-                data-gridIndex={gridIndex}
-                onPress={handleNavigation}>
+                onPress={() => handleNavigation(gridIndex)}>
                 {grid.map((square, squareIndex) => (
                   <View key={squareIndex} style={[gridStyles().square]}>
                     <Text style={gridStyles().text}>{square}</Text>
@@ -170,28 +169,27 @@ const Home = memo(() => {
 });
 
 const styles = StyleSheet.create({
+  background: {
+    height: '100%',
+    backgroundColor: SCREEN_BACKGROUND_COLOR,
+    position: "relative",
+  },
   navBar: {
+    position: "absolute",
+    top: 0,
     flexDirection: 'row',
+    width: "100%",
     justifyContent: 'space-between',
     padding: '5%',
   },
-  background: {
-    // justifyContent: "center",
-    // alignItems: "center",
-    height: '100%',
-    backgroundColor: SCREEN_BACKGROUND_COLOR,
-  },
   carousel: {
-    // width: GRIDSET_HEADER_SIZE,
     top: 65,
-    // backgroundColor: "green"
   },
   gridsetHeader: {
     alignItems: 'center',
   },
   gridsetHeaderRow: {
     flexDirection: 'row',
-    // width: '100%',
   },
   gridsetHeaderSquare: {
     maxWidth: GRIDSET_HEADER_SIZE / 5,
@@ -209,13 +207,10 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     justifyContent: 'center',
-    // alignItems: "center"
-    // backgroundColor: 'rgb(175, 170, 170)', // Blue color for the square
-    // borderRadius: 10, // Optional, to make it slightly rounded
-    shadowColor: SCREEN_TEXT_COLOR, // Shadow color (black)
-    shadowOpacity: 0.8, // Shadow transparency
-    shadowRadius: 20, // Blur radius of the shadow
-    elevation: 10, // For Android to show shadow
+    shadowColor: SCREEN_TEXT_COLOR,
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
   },
   gridsetHeaderLabel: {
     color: SCREEN_TEXT_COLOR,
@@ -223,9 +218,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    // fontFamily: 'Courier New'
     fontFamily: MAIN_FONT_FAMILY,
-    // fontFamily: "Spectral"
   },
   pressableScreen: {
     position: 'absolute',
@@ -250,4 +243,4 @@ const verticalReelStyles = (numOfGrids) =>
 Home.displayName = 'Home';
 export default Home;
 
-// 3. enabled copy and pasting entire code into all 6 boxes at once
+// TODO: enabled copy and pasting entire code into all 6 boxes at once

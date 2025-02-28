@@ -38,3 +38,4 @@ export const gridStyles = (raiseSquare = null, rows = 5, columns = 5) =>
     },
   });
 
+export default {}
