@@ -5,6 +5,9 @@ import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import IconHeader from "./IconHeader";
 
+import CreateProfileModal from "./CreateProfileModal";
+import FailedConnectionModal from './FailedConnectionModal';
+
 
 const MAIN_FONT_FAMILY = 'Verdana'
 
@@ -15,6 +18,8 @@ const Publish = ({ route }) => {
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [error, setError] = useState(false);
 
   const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
     route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows)
@@ -30,6 +35,25 @@ const Publish = ({ route }) => {
     let editedGame = [...game]
     editedGame[row][col] = input 
     setGame(editedGame)
+  }
+  const publishGame = async () => {
+    let displayProfileModal = true;
+    if (localStorage.getItem("player")) {
+      try {aaaaaaaaaaaaaaaaaaaaa
+        const publicGame = game.slice(0, rows).map(row => row.slice(0,cols))
+        await fetch("https://your-api.com/start-game", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ game: publicGame }),
+        });
+        navigation.navigate("Play")
+      } catch {
+        setError(true);
+      } finally {
+        displayProfileModal = false;
+      }
+    }
+    setModalVisible(displayProfileModal)
   }
 
   return (
@@ -67,14 +91,14 @@ const Publish = ({ route }) => {
         ))}
       </Picker>
       <TouchableOpacity
-        onPress={() => (
-          navigation.navigate("Play", {game: game.slice(0, rows).map(row => row.slice(0,cols))})
-        )}
+        onPress={publishGame}
         activeOpacity={1}
         style={styles.button}
       >
         <Text style={styles.buttonText}>Publish</Text>
       </TouchableOpacity>
+      <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible} />
+      <FailedConnectionModal displayModal={error} onClose={() => setError(false)} />
     </View>
   );
 };
@@ -93,7 +117,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   gridText: {
-    fontSize: 18,
+    fontSize: 15,
     textAlign: "center",
     fontWeight: 'bold',
     borderWidth: 1,

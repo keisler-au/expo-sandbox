@@ -11,6 +11,10 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
+import CreateProfileModal from "./CreateProfileModal";
+import FailedConnectionModal from './FailedConnectionModal';
+
+
 const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
 const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
 const CODE_BOX_OUTLINE_COLOR = 'rgba(212, 175, 55, 0.5)';
@@ -20,16 +24,17 @@ const VerificationCodeInput = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [error, setError] = useState(false);
   const inputs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation();
 
   const handleChange = (text: string, index: number) => {
-    if (!/^\d?$/.test(text)) return; // Only allow digits
+    if (!/^\d?$/.test(text)) return;
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
 
-    // Move to the next input
     if (text && index < 5) {
       inputs.current[index + 1]?.focus();
     }
@@ -54,6 +59,15 @@ const VerificationCodeInput = () => {
     setActive(false);
     Keyboard.dismiss();
   };
+
+  const joinGame = () => {
+    let displayProfileModal = true;
+    if (localStorage.getItem("player")) {
+      navigation.navigate("Play");
+      displayProfileModal = false;
+    }
+    setModalVisible(displayProfileModal);
+  }
 
   return (
     <Pressable style={containerStyles(active)} onPress={handleCollapse}>
@@ -94,12 +108,14 @@ const VerificationCodeInput = () => {
       </View>
       {
         submit && <TouchableOpacity
-        onPress={() => navigation.navigate("Publish")}
+        onPress={joinGame}
         activeOpacity={1}
         style={styles.button}
         ><Text style={styles.buttonText}>Join Game</Text>
         </TouchableOpacity>
       }
+      <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />
+      <FailedConnectionModal displayModal={error} onClose={() => setError(false)} />
     </Pressable>
   );
 };

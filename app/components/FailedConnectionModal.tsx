@@ -1,0 +1,74 @@
+import React, { useState } from 'react';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+const FailedConnectionModal = ({ displayModal, onClose }) => {
+  return (
+    <Modal
+      transparent={true}
+      visible={displayModal}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>Failed Connection</Text>
+          <Text style={styles.message}>
+            We failed to connect to the server, so we are not able to enter the game. Please try again</Text>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.buttonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark background with transparency
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  message: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  closeButton: {
+    backgroundColor: '#f44336', // Red color for close button
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+});
+
+export default FailedConnectionModal;
