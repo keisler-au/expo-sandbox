@@ -9,23 +9,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { GRID_SIZE, gridStyles } from './GridLayout';
-// import { LinearGradient } from "expo-linear-gradient";
+import { ScrollView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Carousel from 'react-native-reanimated-carousel';
 import Svg, {
   Defs,
   RadialGradient,
-  LinearGradient,
   Rect,
   Stop,
 } from 'react-native-svg';
 
 import bingoGames from '../templateFixtures';
 
-import Carousel from 'react-native-reanimated-carousel';
-
-import { ScrollView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { GRID_SIZE, gridStyles } from './GridLayout';
 import VerificationCodeInput from './Join';
+import IconHeader from './IconHeader';
+
+
+
 
 const { width } = Dimensions.get('window');
 
@@ -38,27 +39,7 @@ const MAIN_FONT_FAMILY = 'Verdana';
 
 
 
-const HomeHeaderIcons = () => {
-  const navigation = useNavigation();
-  return ( 
-    <View style={styles.navBar}>
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-        <Ionicons
-          name="person-circle-outline"
-          size={30}
-          color={SCREEN_TEXT_COLOR}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-        <Ionicons
-          name="settings-outline"
-          size={30}
-          color={SCREEN_TEXT_COLOR}
-        />
-      </TouchableOpacity>
-    </View>
-  )
-}
+
 
 const GridTemplate = () => (
   Array.from({ length: 5 }).map((_, rowIndex) => (
@@ -145,7 +126,10 @@ const Home = memo(() => {
 
   return (
     <SafeAreaView style={styles.background}>
-      <HomeHeaderIcons />
+      <IconHeader 
+        type={["person-circle-outline", "settings-outline"]} 
+        paths={["Profile", "Settings"]}
+      />
       <Carousel
         loop
         width={width}
@@ -173,14 +157,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: SCREEN_BACKGROUND_COLOR,
     position: "relative",
-  },
-  navBar: {
-    position: "absolute",
-    top: 0,
-    flexDirection: 'row',
-    width: "100%",
-    justifyContent: 'space-between',
-    padding: '5%',
   },
   carousel: {
     top: 65,

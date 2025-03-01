@@ -4,6 +4,7 @@ import Home from './components/Home';
 import Profile from './components/Profile';
 import Publish from './components/Publish';
 import Settings from './components/Settings';
+import Play from './components/Play';
 
 import { useNavigation } from "expo-router";
 
@@ -24,6 +25,7 @@ export default function Index() {
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Settings" component={Settings} />
       <Stack.Screen name="Publish" component={Publish} />
+      <Stack.Screen name="Play" component={Play} />
     </Stack.Navigator>
   )
 }

@@ -3,6 +3,7 @@ import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-nativ
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import IconHeader from "./IconHeader";
 
 
 const MAIN_FONT_FAMILY = 'Verdana'
@@ -33,10 +34,7 @@ const Publish = ({ route }) => {
 
   return (
     <View style={styles.screenContainer}>
-      <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-        <Ionicons name="home-outline" size={30} style={styles.homeIcon} />
-        {/* <FontAwesome5 name="hand-middle-finger" size={50} style={styles.homeIcon} /> */}
-      </TouchableOpacity>
+      <IconHeader type={["home-outline"]} paths={["Home"]} />
       <View style={[styles.gridContainer, {bottom: rows === cols ? "40%" : "45%"}]}>
         {Array.from({length: rows}).map((_, rowIndex) => (
           <View key={rowIndex} style={styles.gridRow}>
@@ -69,7 +67,9 @@ const Publish = ({ route }) => {
         ))}
       </Picker>
       <TouchableOpacity
-        onPress={() => navigation.navigate("Home")}
+        onPress={() => (
+          navigation.navigate("Play", {game: game.slice(0, rows).map(row => row.slice(0,cols))})
+        )}
         activeOpacity={1}
         style={styles.button}
       >
@@ -84,11 +84,6 @@ const styles = StyleSheet.create({
     position: "relative",
     height: "100%",
     backgroundColor: "#FAF9F6",
-  },
-  homeIcon: {
-    position: "absolute",
-    top: 0,
-    padding: "5%",
   },
   gridContainer: {
     position: "absolute",
