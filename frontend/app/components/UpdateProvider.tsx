@@ -2,10 +2,8 @@
 import React, {useState, createContext, useEffect} from "react";
 
 
-export const GridDataContext = createContext();
 
-
-const DataProvider = ({initialGridData, cardId, children}) => {
+const UpdateProvider = ({initialGridData, cardId, children}) => {
     const [gridData, setGridData] = useState(initialGridData);
     const [socket, setSocket] = useState(null);
 
@@ -47,6 +45,9 @@ const DataProvider = ({initialGridData, cardId, children}) => {
     }, [gridData]);
 
     return (
+        
+    )
+    return (
         <GridDataContext.Provider value={{ gridData, setGridData }}>
             {children}
         </GridDataContext.Provider>
@@ -54,4 +55,4 @@ const DataProvider = ({initialGridData, cardId, children}) => {
 };
 
 
-export default DataProvider;
+export default UpdateProvider;

@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
+import { setItemAsync } from 'expo-secure-store';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 const NameModal = ({ displayModal, onClose }) => {
@@ -7,26 +8,32 @@ const NameModal = ({ displayModal, onClose }) => {
     const [name, setName] = useState('');
 
     const handleSubmit = () => {
-        navigation.navigate("Play")
+        setItemAsync("player", JSON.stringify(name))
+        onClose()
+        // navigation.navigate("Publish")
     };
 
     return (
         <Modal
             transparent={true}
             visible={displayModal}
-            animationType="fade"
+            // animationType="fade"
             onRequestClose={onClose}
         >
         <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-            <Text style={styles.title}>First time playing bingo?</Text>
+            <Text style={styles.title}>Player Name:</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Player name"
                 value={name}
                 onChangeText={setName}
             />
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <TouchableOpacity 
+              style={[styles.submitButton, {opacity: name === "" ? .5 : 1}]} 
+              disabled={name == ""} 
+              onPress={handleSubmit}
+            >
                 <Text style={styles.buttonText}>Enter</Text>
             </TouchableOpacity>
             </View>

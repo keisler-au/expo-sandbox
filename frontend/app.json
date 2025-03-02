@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sandbox-app",
-    "slug": "sandbox-app",
+    "name": "app",
+    "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",

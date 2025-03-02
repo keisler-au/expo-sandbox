@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { getItemAsync } from "expo-secure-store";
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import IconHeader from "./IconHeader";
 
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
+import Services from '../services';
+import { PUBLISH_GAME_URL } from '../constants';
 
 
 const MAIN_FONT_FAMILY = 'Verdana'
 
 const gridOptions = ['5x5', '4x5', '4x4', '3x4', '3x3'];
 
+
 const Publish = ({ route }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
+  const [title, setTitle] = useState("GameA1B2C3");
   const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<boolean | string>(false);
 
   const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
     route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows)
@@ -37,28 +42,38 @@ const Publish = ({ route }) => {
     setGame(editedGame)
   }
   const publishGame = async () => {
-    let displayProfileModal = true;
-    if (localStorage.getItem("player")) {
-      try {aaaaaaaaaaaaaaaaaaaaa
-        const publicGame = game.slice(0, rows).map(row => row.slice(0,cols))
-        await fetch("https://your-api.com/start-game", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ game: publicGame }),
-        });
-        navigation.navigate("Play")
-      } catch {
-        setError(true);
-      } finally {
-        displayProfileModal = false;
-      }
+    const publicGame = {
+      title: title,
+      values: game.slice(0, rows).map(row => row.slice(0,cols))
+    };
+
+    const { 
+      displayProfileModal, 
+      error, 
+      response
+    } = await Services.publishedGame(PUBLISH_GAME_URL, publicGame)
+
+    if (response && response.ok) {
+      navigation.navigate("Play", { game: response.game })
     }
+
     setModalVisible(displayProfileModal)
+    setError(error)
   }
 
   return (
     <View style={styles.screenContainer}>
       <IconHeader type={["home-outline"]} paths={["Home"]} />
+      {/* EditTitle */}
+      <View style={styles.titleContainer}>
+        <TextInput 
+            style={styles.title} 
+            value={title}
+            onChangeText={(value) => setTitle(value)}
+        />
+        <Feather name="edit-3" size={20}/>
+      </View>
+      {/* EditGrid */}
       <View style={[styles.gridContainer, {bottom: rows === cols ? "40%" : "45%"}]}>
         {Array.from({length: rows}).map((_, rowIndex) => (
           <View key={rowIndex} style={styles.gridRow}>
@@ -90,15 +105,13 @@ const Publish = ({ route }) => {
           <Picker.Item key={option} label={option} value={option} />
         ))}
       </Picker>
-      <TouchableOpacity
-        onPress={publishGame}
-        activeOpacity={1}
-        style={styles.button}
-      >
-        <Text style={styles.buttonText}>Publish</Text>
+      <TouchableOpacity onPress={publishGame} activeOpacity={1} style={styles.button}>
+        <Text style={styles.buttonText}>
+          Publish
+        </Text>
       </TouchableOpacity>
-      <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible} />
-      <FailedConnectionModal displayModal={error} onClose={() => setError(false)} />
+      <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />
+      <FailedConnectionModal displayModal={!!error} message={error} onClose={() => setError(false)} />
     </View>
   );
 };
@@ -108,6 +121,20 @@ const styles = StyleSheet.create({
     position: "relative",
     height: "100%",
     backgroundColor: "#FAF9F6",
+  },
+  titleContainer: {
+    marginTop: 60,
+    height: 20,
+    flexDirection: "row",
+    borderTopColor: "transparent",
+    borderRightColor: "transparent",
+    borderLeftColor: "transparent",
+    borderBottomColor: "black",
+    borderWidth: 1,
+  },
+  title: {
+    width: 200,
+    fontSize: 18,        
   },
   gridContainer: {
     position: "absolute",

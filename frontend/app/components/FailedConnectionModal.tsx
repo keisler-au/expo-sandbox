@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-const FailedConnectionModal = ({ displayModal, onClose }) => {
+const FailedConnectionModal = ({ displayModal, message, onClose }) => {
   return (
     <Modal
       transparent={true}
@@ -12,8 +12,7 @@ const FailedConnectionModal = ({ displayModal, onClose }) => {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>Failed Connection</Text>
-          <Text style={styles.message}>
-            We failed to connect to the server, so we are not able to enter the game. Please try again</Text>
+          <Text style={styles.message}>{message}</Text>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.buttonText}>Close</Text>
           </TouchableOpacity>

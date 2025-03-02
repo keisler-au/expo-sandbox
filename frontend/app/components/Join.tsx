@@ -115,7 +115,7 @@ const VerificationCodeInput = () => {
         </TouchableOpacity>
       }
       <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />
-      <FailedConnectionModal displayModal={error} onClose={() => setError(false)} />
+      <FailedConnectionModal displayModal={!!error} message={error} onClose={() => setError(false)} />
     </Pressable>
   );
 };
