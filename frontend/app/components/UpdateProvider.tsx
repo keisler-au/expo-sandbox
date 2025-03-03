@@ -9,7 +9,6 @@ const UpdateProvider = ({ game, render }) => {
     // this also needs to go through verify-online-execute
     useEffect(() => {
         const ws = new WebSocket(`ws://yourserver/ws/bingo/${cardId}/`);
-        setSocket(ws);
         // recieve network update
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -26,10 +25,6 @@ const UpdateProvider = ({ game, render }) => {
         };
     }, [cardId, game]);
 
-    const handleSquareUpdate = (row, col, value) => {
-        // send local update
-
-    };
 
     return render(game, ws)
 };

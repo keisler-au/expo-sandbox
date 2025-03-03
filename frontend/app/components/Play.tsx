@@ -47,6 +47,13 @@ const formatTime = (dateString: string) => {
     });
 }
 
+// const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
+//     if (pushSquare.game_id === currentSquare.game_id) {
+//         // TODO: The lt time check is pseudo code
+//         const pushSquareIsEarlier = pushSquare.last_updated < currentSquare.last_updated;
+//         return pushSquareIsEarlier ? pushSquare : currentSquare;
+//     }
+// }
 const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
     if (pushSquare.game_id === currentSquare.game_id) {
         // TODO: The lt time check is pseudo code
@@ -55,12 +62,12 @@ const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
     }
 }
 
-const verifyGame = (localGame, networkGame) => {
-    return networkGame.map(task => {
-        const localTask = localGame[task.grid_row][task.grid_column];
-        return verifyEarliestCompletedSquare(task, localTask)
-    })
-}
+// const verifyGame = (localGame, networkGame) => {
+//     return networkGame.map(task => {
+//         const localTask = localGame[task.grid_row][task.grid_column];
+//         return verifyEarliestCompletedSquare(task, localTask)
+//     })
+// }
 
 const PlayWrapper = ({route}) => (
     <UpdateProvider 
@@ -84,9 +91,9 @@ const Play = async ({ gameData, socket }) => {
     const cols = game[0].length;
 
     // If network game is out of sync from local game then get all tasks with earliest completed timestamps
-    if (!isEqual(game, gameData.tasks)) {
-        setGame(verifyGame(game, gameData.tasks));
-    }
+    // if (!isEqual(game, gameData.tasks)) {
+    //     setGame(verifyGame(game, gameData.tasks));
+    // }
 
     // useEffect - to save game to local storage on first entry
     useEffect(() => {
@@ -124,7 +131,7 @@ const Play = async ({ gameData, socket }) => {
                 // clear queue
             // sendCompletedSquare
                 // send single updated square
-
+    // Online status checker
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
         setIsOffline(!state.isConnected);
@@ -151,6 +158,25 @@ const Play = async ({ gameData, socket }) => {
         // TODO: should game be here? 
     }, [isOffline, sendCompletedSquare, game]); 
 
+    // Recieving completed squares from network
+    useEffect(() => {
+        // TODO: update url - add to constants
+        const ws = new WebSocket(`ws://yourserver/ws/bingo/${game.id}/`);
+
+        ws.onmessage = (event) => {
+            const square = JSON.parse(event.data);
+            const currentSquare = game[square.grid_row][square.grid_column];
+            const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
+            if (isEqual(square, earliestSquare)) {
+                setGame(prev => prev[square.grid_row][square.grid_column] = square);
+            }
+        };
+
+        return () => {
+            ws.close();
+        };
+    }, [cardId, game]);
+
     const shareContent = async () => {
         try {
             await shareAsync('https://example.com');
@@ -163,7 +189,7 @@ const Play = async ({ gameData, socket }) => {
     const taskCompleted = async (square) => { 
         const currentSquare = game[square.grid_row][square.grid_column];
         const earliestSquare= verifyEarliestCompletedSquare(square, currentSquare);
-        if (square === earliestSquare) {
+        if (isEqual(square, earliestSquare)) {
             square.completed = true;
             square.completed_by = await getItemAsync("player");
             setGame(prev => prev[square.grid_row][square.grid_column] = square);
