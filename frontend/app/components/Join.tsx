@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
+import { getItemAsync } from 'expo-secure-store';
 
 
 const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
@@ -20,7 +21,7 @@ const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
 const CODE_BOX_OUTLINE_COLOR = 'rgba(212, 175, 55, 0.5)';
 const MAIN_FONT_FAMILY = 'Verdana';
 
-const VerificationCodeInput = () => {
+const VerificationCodeInput = ({ joinGame }) => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
@@ -28,6 +29,21 @@ const VerificationCodeInput = () => {
   const [error, setError] = useState(false);
   const inputs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const enterPreviousGameCode = async () => {
+      const previousGame = await getItemAsync("offlineGameState");
+      if (previousGame && joinGame) {
+        // if (previousGame.last_updated < 3 hours ago) {
+        //   setCode(previousGame.code.split(""));
+        //   // hopefully this automatically brings up the keyboard and pushed the join game input into view
+        //   inputs.current[-1]?.focus();
+        // }
+
+      }
+    }
+    enterPreviousGameCode();
+  }, [joinGame])
 
   const handleChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;
@@ -62,8 +78,14 @@ const VerificationCodeInput = () => {
 
   const joinGame = () => {
     let displayProfileModal = true;
+    // check player
+    // check error
+    // check last updated and push to database
+    // check response 
+      // -> if failed then check if offlineGameStatus.code matches code
+      // -> if it does match, then pass the offline game into the route
     if (localStorage.getItem("player")) {
-      navigation.navigate("Play");
+      navigation.navigate("Play" {game: response.game || });
       displayProfileModal = false;
     }
     setModalVisible(displayProfileModal);

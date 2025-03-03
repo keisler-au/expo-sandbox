@@ -1,4 +1,4 @@
-import React, { useState, useRef, memo } from 'react';
+import React, { useState, useRef, memo, useEffect } from 'react';
 import {
   Dimensions,
   StyleSheet,
@@ -24,6 +24,7 @@ import bingoGames from '../templateFixtures';
 import { GRID_SIZE, gridStyles } from './GridLayout';
 import VerificationCodeInput from './Join';
 import IconHeader from './IconHeader';
+import { getItemAsync } from 'expo-secure-store';
 
 
 
@@ -147,7 +148,7 @@ const Home = memo(() => {
           collapseReel={isVerticalReel} 
           expandedGridset={expandedGridset}
         /> 
-        : <VerificationCodeInput />}
+        : <VerificationCodeInput joinGame={!expanded} />}
     </SafeAreaView>
   );
 });
