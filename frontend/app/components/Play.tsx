@@ -14,6 +14,7 @@ import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { isEqual } from 'lodash';
 import { push } from 'expo-router/build/global-state/routing';
+import { RECIEVE_GAME_UPDATES_URL } from '../constants';
 
 
 const completedDisplays = [
@@ -69,16 +70,9 @@ const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
 //     })
 // }
 
-const PlayWrapper = ({route}) => (
-    <UpdateProvider 
-        game={route.params.game}
-        render={(networkGame, socket) => <Play gameData={networkGame} socket={socket} />}
-    />
-)
-
 
 // const Play = ({route}) => {
-const Play = async ({ gameData, socket }) => {
+const Play = async ({ gameData }) => {
     const [game, setGame] = useState(gameData.tasks);
     const [saveGame, setSaveGame] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
@@ -86,6 +80,7 @@ const Play = async ({ gameData, socket }) => {
     const [modalSquareText, setModalSquareText] = useState();
     const [sendCompletedSquare, setSendCompletedSquare] = useState(null);
     const [isOffline, setIsOffline] = useState(null);
+    const [socket, setSocket] = useState<WebSocket | undefined>();
 
     const rows = game.length;
     const cols = game[0].length;
@@ -148,7 +143,7 @@ const Play = async ({ gameData, socket }) => {
             saveToQueue(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (sendCompletedSquare) {
-            socket.send(JSON.stringify(sendCompletedSquare));
+            socket?.send(JSON.stringify(sendCompletedSquare));
             setSendCompletedSquare(null);
         } else if (isOffline) {
             setSaveGame(true);
@@ -160,9 +155,8 @@ const Play = async ({ gameData, socket }) => {
 
     // Recieving completed squares from network
     useEffect(() => {
-        // TODO: update url - add to constants
-        const ws = new WebSocket(`ws://yourserver/ws/bingo/${game.id}/`);
-
+        const ws = new WebSocket(`${RECIEVE_GAME_UPDATES_URL}/${game.id}/`);
+        setSocket(ws);
         ws.onmessage = (event) => {
             const square = JSON.parse(event.data);
             const currentSquare = game[square.grid_row][square.grid_column];
@@ -172,10 +166,8 @@ const Play = async ({ gameData, socket }) => {
             }
         };
 
-        return () => {
-            ws.close();
-        };
-    }, [cardId, game]);
+        return () => ws.close();
+    }, [game.id]);
 
     const shareContent = async () => {
         try {
