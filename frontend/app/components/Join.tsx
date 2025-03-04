@@ -76,7 +76,7 @@ const VerificationCodeInput = ({ joinGame }) => {
     Keyboard.dismiss();
   };
 
-  const joinGame = () => {
+  const connectToGame = () => {
     let displayProfileModal = true;
     // check player
     // check error
@@ -84,11 +84,11 @@ const VerificationCodeInput = ({ joinGame }) => {
     // check response 
       // -> if failed then check if offlineGameStatus.code matches code
       // -> if it does match, then pass the offline game into the route
-    if (localStorage.getItem("player")) {
-      navigation.navigate("Play" {game: response.game || });
-      displayProfileModal = false;
-    }
-    setModalVisible(displayProfileModal);
+    // if (localStorage.getItem("player")) {
+    //   navigation.navigate("Play" {game: response.game || });
+    //   displayProfileModal = false;
+    // }
+    // setModalVisible(displayProfileModal);
   }
 
   return (
@@ -130,7 +130,7 @@ const VerificationCodeInput = ({ joinGame }) => {
       </View>
       {
         submit && <TouchableOpacity
-        onPress={joinGame}
+        onPress={connectToGame}
         activeOpacity={1}
         style={styles.button}
         ><Text style={styles.buttonText}>Join Game</Text>

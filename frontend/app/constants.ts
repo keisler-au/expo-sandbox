@@ -1,5 +1,6 @@
 
-const SERVER = "52f9-80-201-246-194.ngrok-free.app"
+const DYNAMIC_URL = "3614"
+const SERVER = `${DYNAMIC_URL}-80-201-246-194.ngrok-free.app`
 
 const BASE_HTTP =
   process.env.NODE_ENV === "production"

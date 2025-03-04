@@ -1,27 +1,39 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 
 import {shareAsync} from 'expo-sharing';
 import IconHeader from "./IconHeader"
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { TextInput } from 'react-native-gesture-handler';
 import BottomSheet from 'react-native-simple-bottom-sheet';
-import NetInfo from '@react-native-community/netinfo';
-import UpdateProvider from './UpdateProvider';
-import { saveSnapshot } from 'react-native-reanimated/src/layoutReanimation/web';
-import Services from '../services';
+import NetInfo, { refresh } from '@react-native-community/netinfo';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { isEqual } from 'lodash';
-import { push } from 'expo-router/build/global-state/routing';
 import { RECIEVE_GAME_UPDATES_URL } from '../constants';
 
 
-const completedDisplays = [
-    "value",
-    "completed_by",
-    "last_updated",
-]
+
+
+
+
+const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
+}
+
+const addDisplayTextDetails= (square) => {
+    const completedDisplays = ["value", "completed_by", "last_updated"]
+    const currentDisplayIndex = square.displayTextIndex == null ? 2 : square.displayTextIndex;
+    const displayTextIndex = (currentDisplayIndex + 1) % completedDisplays.length;
+    let displayText = square[completedDisplays[displayTextIndex]];
+    const formattedTime = formatTime(displayText);
+    if (formattedTime !== "Invalid Date") { displayText = formattedTime }
+    return {...square, displayText, displayTextIndex}
+}
 
 const saveToQueue = async (square) => {
     const storedData = await getItemAsync("offlineUpdatesQueue");
@@ -39,95 +51,56 @@ const sendSavedQueue = async () => {
     }
 }
 
-const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    });
-}
-
-// const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
-//     if (pushSquare.game_id === currentSquare.game_id) {
-//         // TODO: The lt time check is pseudo code
-//         const pushSquareIsEarlier = pushSquare.last_updated < currentSquare.last_updated;
-//         return pushSquareIsEarlier ? pushSquare : currentSquare;
-//     }
-// }
 const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
     if (pushSquare.game_id === currentSquare.game_id) {
-        // TODO: The lt time check is pseudo code
-        const pushSquareIsEarlier = pushSquare.last_updated < currentSquare.last_updated;
+        const pushSquareIsEarlier = (
+            new Date(pushSquare.last_updated) < new Date(currentSquare.last_updated)
+        );
         return pushSquareIsEarlier ? pushSquare : currentSquare;
     }
 }
 
-// const verifyGame = (localGame, networkGame) => {
-//     return networkGame.map(task => {
-//         const localTask = localGame[task.grid_row][task.grid_column];
-//         return verifyEarliestCompletedSquare(task, localTask)
-//     })
-// }
 
-
-// const Play = ({route}) => {
-const Play = async ({ gameData }) => {
-    const [game, setGame] = useState(gameData.tasks);
+const Play = ({ route }) => {
+    const [game, setGame] = useState(route.params.game.tasks);
     const [saveGame, setSaveGame] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
-    const [completedDisplayIndex, setCompletedDisplayIndex] = useState<number>(0);
-    const [modalSquareText, setModalSquareText] = useState();
+    const [focusedSquare, setFocusedSquare] = useState({});
     const [sendCompletedSquare, setSendCompletedSquare] = useState(null);
+    // const [completedDisplayText, setCompletedDisplayText] = useState(null);
     const [isOffline, setIsOffline] = useState(null);
     const [socket, setSocket] = useState<WebSocket | undefined>();
 
     const rows = game.length;
     const cols = game[0].length;
 
-    // If network game is out of sync from local game then get all tasks with earliest completed timestamps
-    // if (!isEqual(game, gameData.tasks)) {
-    //     setGame(verifyGame(game, gameData.tasks));
-    // }
+
+    const refreshGameWithCompletedSquare = (square) => {
+        square = addDisplayTextDetails(square)
+        setGame(prevGame => prevGame.map(row => row.map(prevSquare =>
+                    prevSquare.id === square.id 
+                    ? square
+                    : prevSquare
+                )
+            )
+        )
+    }
 
     // useEffect - to save game to local storage on first entry
     useEffect(() => {
+        console.log("Save Game: how many times is this rendering?")
         const saveGameToStorage = async () => { 
-            gameData.tasks = game;
-            gameData.last_updated = Date.now();
-            setItemAsync("offlineGameState", JSON.stringify(gameData));
+            route.params.game.tasks = game;
+            route.params.game.last_updated = Date.now();
+            setItemAsync("offlineGameState", JSON.stringify(route.params.game));
             setSaveGame(false);
         }
-        saveGame && gameData && saveGameToStorage();
+        saveGame && route.params.game && saveGameToStorage();
     }, [saveGame])
 
-        // first render triggers this
-            // online - send nothing - don't save game
-            // offline - send nothing - don't save game
-        // sendCompletedSquare change triggers this 
-            // it will have come from local taskCompleted
-                // online - send single updated square - don't save game
-                // offline - save current local square to queue - save game
-        // isOffline change triggers this 
-            // change to online - send saved updated squares - don't save game
-            // change to offline - send nothing - save game
-        
-        // isoffline === null && sendCompletedSquare === null: return
-            // send nothing
-            // don't save game
-        // isoffline 
-            // sendCompletedSquare 
-                // save current local square to queue
-            // save game
-        // !isoffline
-            // offlineUpdatesQueue = await getItemAsync()
-            // offlineUpdatesQueue 
-                // send saved updated squares
-                // clear queue
-            // sendCompletedSquare
-                // send single updated square
     // Online status checker
     useEffect(() => {
+        console.log("NetInfo: how many times is this rendering?")
         const unsubscribe = NetInfo.addEventListener(state => {
         setIsOffline(!state.isConnected);
         });
@@ -135,9 +108,25 @@ const Play = async ({ gameData }) => {
         return () => unsubscribe();
     }, []);
 
+    // Recieving completed squares from network
+    useEffect(() => {
+        console.log("Web Socket: how many times is this rendering?")
+        const ws = new WebSocket(`${RECIEVE_GAME_UPDATES_URL}/${game.id}/`);
+        setSocket(ws);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const square = data.task;
+            const currentSquare = game[square.grid_row][square.grid_column];
+            const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
+            isEqual(square, earliestSquare) && refreshGameWithCompletedSquare(square);
+        };
+
+        return () => ws.close();
+    }, [game.id]);
 
     // Sending or Saving locally completed squares
     useEffect(() => {
+        console.log("Sending: how many times is this rendering?")
         if (isOffline === null) return;
         if (isOffline && sendCompletedSquare) {
             saveToQueue(sendCompletedSquare);
@@ -150,26 +139,10 @@ const Play = async ({ gameData }) => {
         } else {
             sendSavedQueue();
         }
-        // TODO: should game be here? 
-    }, [isOffline, sendCompletedSquare, game]); 
-
-    // Recieving completed squares from network
-    useEffect(() => {
-        const ws = new WebSocket(`${RECIEVE_GAME_UPDATES_URL}/${game.id}/`);
-        setSocket(ws);
-        ws.onmessage = (event) => {
-            const square = JSON.parse(event.data);
-            const currentSquare = game[square.grid_row][square.grid_column];
-            const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
-            if (isEqual(square, earliestSquare)) {
-                setGame(prev => prev[square.grid_row][square.grid_column] = square);
-            }
-        };
-
-        return () => ws.close();
-    }, [game.id]);
+    }, [isOffline, sendCompletedSquare]); 
 
     const shareContent = async () => {
+        // TODO
         try {
             await shareAsync('https://example.com');
             } catch (error) {
@@ -182,31 +155,26 @@ const Play = async ({ gameData }) => {
         const currentSquare = game[square.grid_row][square.grid_column];
         const earliestSquare= verifyEarliestCompletedSquare(square, currentSquare);
         if (isEqual(square, earliestSquare)) {
-            square.completed = true;
-            square.completed_by = await getItemAsync("player");
-            setGame(prev => prev[square.grid_row][square.grid_column] = square);
+            const player = await getItemAsync("player");
+            square = { ...square, completed: true, completed_by: player}
+            refreshGameWithCompletedSquare(square);
             setSendCompletedSquare(square)
         }
         // TODO: Modal notis and retry mechanism?
         // setUpdateState(response.updateState)
         setModalVisible(false);
     }
-    
-    const taskDisplayChange = (item) => {
-        // TODO: Format time for display
-        let showModal = true;
-        if (item.completed) {
-            showModal = false;
-            setCompletedDisplayIndex((prevIndex) => (prevIndex + 1) % completedDisplays.length)
-        } 
-        setModalVisible(showModal)
-        if (showModal) {
-            setModalSquareText(item.value)
+
+    const taskDisplayChange = (square) => {
+        if (square.completed) {
+            // Change the display text of the square and save it into game state
+            refreshGameWithCompletedSquare(square)
         }
+        setFocusedSquare(square);
+        setModalVisible(!square.completed)
     }
 
     return (
-        <UpdateProvider render={(updatedSquare) => (
             <View style={styles.screenContainer}>
                 <IconHeader type={["home-outline"]} paths={["Home"]} />
                 <Text style={styles.gameCode}>Game Code</Text>
@@ -215,7 +183,7 @@ const Play = async ({ gameData }) => {
                     <Feather name="share" onPress={shareContent} size={20}/>
                 </View>
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>{gameData.title}</Text>
+                    <Text style={styles.title}>{route.params.game.title}</Text>
                 </View>
                 <View style={styles.gridContainer}>
                     {game.map((row, rowIndex) => (
@@ -230,14 +198,15 @@ const Play = async ({ gameData }) => {
                                     width: 350 / cols}
                             ]}>
                                 <TouchableOpacity 
-                                    // style={styles.innerSquare} 
                                     style={completeTaskStyles(square.completed)}
                                     onPress={() => taskDisplayChange(square)}
                                 >
                                     <Text
                                         style={[styles.gridText]}
                                     >
-                                        {square[completedDisplays[completedDisplayIndex]]}
+                                        {square.completed
+                                            ? square.displayText
+                                            : square.value}
                                     </Text>
                                 </TouchableOpacity>
                                 <Modal
@@ -255,12 +224,12 @@ const Play = async ({ gameData }) => {
                                             </TouchableOpacity>
                                             <View style={styles.modalDescriptionTextContainer}>
                                                 <Text style={styles.modalDescriptionText}>
-                                                    {modalSquareText}
+                                                    {focusedSquare?.value}
                                                 </Text>
                                             </View>
                                             <TouchableOpacity 
                                                 style={styles.modalCompletedContainer} 
-                                                onPress={() => taskCompleted(square)}
+                                                onPress={() => taskCompleted(focusedSquare)}
                                             >
                                                 <Text style={styles.modalCompletedText}>Completed </Text>
                                                 <Feather name="check-square" size={25} color="green" />
@@ -306,11 +275,10 @@ const Play = async ({ gameData }) => {
                     </View>
                 </BottomSheet>
             </View>
-        )}/>
     )
 }
 
-export default PlayWrapper;
+export default Play;
 
 const completeTaskStyles= (completed) => StyleSheet.create({
     // innerSquare: {
