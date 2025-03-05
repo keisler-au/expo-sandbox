@@ -1,26 +1,47 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { setItemAsync } from 'expo-secure-store';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { getItemAsync, setItemAsync } from 'expo-secure-store';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import Services from '../services';
+import { CREATE_PLAYER_URL } from '../constants';
+import FailedConnectionModal from './FailedConnectionModal';
 
-const NameModal = ({ displayModal, onClose }) => {
-    const navigation = useNavigation()
-    const [name, setName] = useState('');
+const CreatePlayerModal = ({ displayModal, onClose }) => {
+    const [name, setName] = useState();
+    const [error, setError] = useState();
 
-    const handleSubmit = () => {
-        setItemAsync("player", JSON.stringify(name))
-        onClose()
-        // navigation.navigate("Publish")
+    useEffect(() => {
+      const getName = async () => {
+        const player = await getItemAsync("player");
+        if (player) setName(JSON.parse(player).name);
+      }
+      
+      if (!name) getName();
+    }, [displayModal, name])
+
+    const handleSubmit = async () => {
+        const { 
+          error, 
+          response
+        } = await Services.sendRequest(CREATE_PLAYER_URL, name)
+
+        if (response && response.ok) {
+          setName(response.player.name)
+          setItemAsync("player", JSON.stringify(response.player))
+          onClose()
+        }
+        setError(error)
     };
 
     return (
+      <>
         <Modal
             transparent={true}
             visible={displayModal}
             // animationType="fade"
             onRequestClose={onClose}
         >
-        <View style={styles.modalContainer}>
+        <Pressable style={styles.modalContainer} onPress={onClose}>
             <View style={styles.modalContent}>
             <Text style={styles.title}>Player Name:</Text>
             <TextInput
@@ -37,8 +58,10 @@ const NameModal = ({ displayModal, onClose }) => {
                 <Text style={styles.buttonText}>Enter</Text>
             </TouchableOpacity>
             </View>
-        </View>
+        </Pressable>
         </Modal>
+        <FailedConnectionModal displayModal={!!error} message={error} onClose={() => setError(false)} />
+      </>
     );
 };
 
@@ -47,7 +70,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Darkened background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: 300,
@@ -87,4 +110,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NameModal;
+export default CreatePlayerModal;

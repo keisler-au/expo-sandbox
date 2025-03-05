@@ -25,6 +25,7 @@ import { GRID_SIZE, gridStyles } from './GridLayout';
 import VerificationCodeInput from './Join';
 import IconHeader from './IconHeader';
 import { getItemAsync } from 'expo-secure-store';
+import CreatePlayerModal from './CreateProfileModal';
 
 
 
@@ -101,6 +102,7 @@ const VerticalReel = ({ collapseReel, expandedGridset }) => {
 
 const Home = memo(() => {
   const [expanded, setExpanded] = useState(false);
+  const [displayPlayerModal, setDisplayPlayerModal] = useState(false);
   const expandedGridset = useRef();
 
   const isVerticalReel = (gridset) => {
@@ -128,15 +130,17 @@ const Home = memo(() => {
   return (
     <SafeAreaView style={styles.background}>
       <IconHeader 
-        type={["person-circle-outline", "settings-outline"]} 
-        paths={["Profile", "Settings"]}
+        type={["settings-outline", "person-circle-outline"]} 
+        paths={["Settings", "Profile"]}
+        onChange={() => setDisplayPlayerModal(true)}
       />
       <Carousel
         loop
         width={width}
         height={GRIDSET_HEADER_SIZE}
         style={styles.carousel}
-        autoPlay={!expanded}
+        // autoPlay={!expanded}
+        autoPlay={false}
         autoPlayInterval={1000}
         data={Object.keys(bingoGames)}
         scrollAnimationDuration={1000}
@@ -149,7 +153,9 @@ const Home = memo(() => {
           expandedGridset={expandedGridset}
         /> 
         : <VerificationCodeInput joinGame={!expanded} />}
+        <CreatePlayerModal displayModal={displayPlayerModal} onClose={() => setDisplayPlayerModal(false)} />
     </SafeAreaView>
+
   );
 });
 

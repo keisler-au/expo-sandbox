@@ -1,18 +1,19 @@
-import { getItemAsync } from "expo-secure-store";
+import { getItem, getItemAsync } from "expo-secure-store";
 
 
 class Services {
-    static async publishedGame (url: string, game: any) {
+    static async sendRequest (url: string, data: any) {
         let displayProfileModal = true;
         let error: boolean | string = false;
         let response;
 
-        if (await getItemAsync("player")) {
+        const player = await getItemAsync("player");
+        if (player) {
             try {
                 response = await fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify( {game} ),
+                    body: JSON.stringify( {data} ),
                 });
             } catch (e) {
                 console.log(e.toString())
@@ -27,7 +28,7 @@ class Services {
             response.ok = true;
         } 
         if (response?.ok === false && response.status === 404) {
-            error = "The game code used was not a valid game, please try again."
+            error = "The game code used did not connect, please try again."
         }
 
         const result = {

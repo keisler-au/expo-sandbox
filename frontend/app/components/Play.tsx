@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-
+import useWebSocket from 'react-use-websocket';
 import {shareAsync} from 'expo-sharing';
 import IconHeader from "./IconHeader"
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -30,8 +30,14 @@ const addDisplayTextDetails= (square) => {
     const currentDisplayIndex = square.displayTextIndex == null ? 2 : square.displayTextIndex;
     const displayTextIndex = (currentDisplayIndex + 1) % completedDisplays.length;
     let displayText = square[completedDisplays[displayTextIndex]];
-    const formattedTime = formatTime(displayText);
-    if (formattedTime !== "Invalid Date") { displayText = formattedTime }
+    switch (displayTextIndex) {
+        case 2:
+            displayText = formatTime(displayText);
+            break;
+        case 1: 
+            displayText = JSON.parse(displayText).name
+            break;
+    }
     return {...square, displayText, displayTextIndex}
 }
 
@@ -42,11 +48,11 @@ const saveToQueue = async (square) => {
     setItemAsync("offlineUpdatesQueue", JSON.stringify(dataArray));
 }
 
-const sendSavedQueue = async () => {
+const sendSavedQueue = async (sendJsonMessage) => {
     const offlineUpdatesQueue = await getItemAsync("offlineUpdatesQueue");
     if (offlineUpdatesQueue) {
         const queue = JSON.parse(offlineUpdatesQueue)
-        queue.forEach(square => socket.send(JSON.stringify(square)))
+        queue.forEach(square => sendJsonMessage(JSON.stringify(square)))
         await deleteItemAsync("offlineUpdatesQueue");
     }
 }
@@ -63,16 +69,20 @@ const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
 
 const Play = ({ route }) => {
     const [game, setGame] = useState(route.params.game.tasks);
+    const [player, setPlayer] = useState();
     const [saveGame, setSaveGame] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [focusedSquare, setFocusedSquare] = useState({});
     const [sendCompletedSquare, setSendCompletedSquare] = useState(null);
     // const [completedDisplayText, setCompletedDisplayText] = useState(null);
     const [isOffline, setIsOffline] = useState(null);
-    const [socket, setSocket] = useState<WebSocket | undefined>();
+    // const wsRef = useRef();
+    // const [wsRetryAttempts, setWSRetryAttempts] = useState(0);
+    // const wsMaxRetries = 15;
 
     const rows = game.length;
     const cols = game[0].length;
+
 
 
     const refreshGameWithCompletedSquare = (square) => {
@@ -85,6 +95,16 @@ const Play = ({ route }) => {
             )
         )
     }
+
+    // useEffect - to save local play on first entry
+    useEffect(() => {
+        console.log("Player: how many times is this rendering?")
+        const getLocalPlayer = async () => {
+            const localPlayer = await getItemAsync("player");
+            setPlayer(localPlayer);
+        }
+        getLocalPlayer()
+    }, [])
 
     // useEffect - to save game to local storage on first entry
     useEffect(() => {
@@ -108,21 +128,38 @@ const Play = ({ route }) => {
         return () => unsubscribe();
     }, []);
 
-    // Recieving completed squares from network
-    useEffect(() => {
-        console.log("Web Socket: how many times is this rendering?")
-        const ws = new WebSocket(`${RECIEVE_GAME_UPDATES_URL}/${game.id}/`);
-        setSocket(ws);
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const square = data.task;
-            const currentSquare = game[square.grid_row][square.grid_column];
-            const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
-            isEqual(square, earliestSquare) && refreshGameWithCompletedSquare(square);
-        };
+    // retry mechanism of sockets
 
-        return () => ws.close();
-    }, [game.id]);
+    // Recieving completed squares from network
+    // 
+    const WS_URL = `${RECIEVE_GAME_UPDATES_URL}/${game.id}/`;
+    const wsMaxRetries = 5;
+    
+    const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, {
+        shouldReconnect: (closeEvent) => true,
+        reconnectAttempts: wsMaxRetries,
+        reconnectInterval: 1000,
+        onOpen: () => {
+            console.log("WebSocket connected");
+        },
+        onClose: (event) => {
+            console.log(`WebSocket closed: ${event.reason}, attempting to reconnect...`);
+        },
+    });
+
+    useEffect(() => {
+        if (lastJsonMessage) {
+            const data = lastJsonMessage.data;
+            const square = data && data.task;
+            if (square && square.completed_by.id !== player.id) {
+                const currentSquare = game[square.grid_row][square.grid_column];
+                const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
+                if (JSON.stringify(square) === JSON.stringify(earliestSquare)) {
+                    refreshGameWithCompletedSquare(square);
+                }
+            }
+        }
+    }, [lastJsonMessage]);
 
     // Sending or Saving locally completed squares
     useEffect(() => {
@@ -132,12 +169,12 @@ const Play = ({ route }) => {
             saveToQueue(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (sendCompletedSquare) {
-            socket?.send(JSON.stringify(sendCompletedSquare));
+            sendJsonMessage(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (isOffline) {
             setSaveGame(true);
-        } else {
-            sendSavedQueue();
+        } else { 
+            sendSavedQueue(sendJsonMessage);
         }
     }, [isOffline, sendCompletedSquare]); 
 
@@ -155,7 +192,6 @@ const Play = ({ route }) => {
         const currentSquare = game[square.grid_row][square.grid_column];
         const earliestSquare= verifyEarliestCompletedSquare(square, currentSquare);
         if (isEqual(square, earliestSquare)) {
-            const player = await getItemAsync("player");
             square = { ...square, completed: true, completed_by: player}
             refreshGameWithCompletedSquare(square);
             setSendCompletedSquare(square)
@@ -290,11 +326,9 @@ const completeTaskStyles= (completed) => StyleSheet.create({
         borderStyle: "solid",
         borderColor: "black",
         elevation: 10, // Shadow for Android
-        // shadowColor: "#000",
-        // shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.2,
-        shadowRadius: 1,
-        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: completed ? 0 : 1,
+        shadowOffset: { width: 0, height: completed ? 0 : 4 },
         backgroundColor: completed ? "#e0e0e0" : "#ffffff",
     // },
 })
@@ -320,17 +354,18 @@ const styles = StyleSheet.create({
     },
     titleContainer: {
         marginTop: 60,
-        height: 20,
+        height: 25,
         flexDirection: "row",
         borderTopColor: "transparent",
         borderRightColor: "transparent",
         borderLeftColor: "transparent",
         borderBottomColor: "black",
-        borderWidth: 1,
+        borderWidth: 2,
     },
     title: {
-        width: 200,
-        fontSize: 18,        
+        marginBottom: 2,
+        fontSize: 18,     
+        textAlign: "center",   
     },
     gridContainer: {
         marginTop: 60,

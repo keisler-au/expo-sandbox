@@ -7,7 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 
 const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
 
-const IconHeader = ({type, paths}) => {
+const IconHeader = ({type, paths, onChange = undefined}) => {
   const navigation = useNavigation();
   return ( 
     <View style={styles.navBar}>
@@ -18,7 +18,7 @@ const IconHeader = ({type, paths}) => {
           color={SCREEN_TEXT_COLOR}
         />
       </TouchableOpacity>
-      {type[1] && <TouchableOpacity onPress={() => navigation.navigate(paths[1])}>
+      {type[1] && <TouchableOpacity onPress={onChange}>
         <Ionicons
           name={type[1]}
           size={30}

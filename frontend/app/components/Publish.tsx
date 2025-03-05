@@ -51,8 +51,8 @@ const Publish = ({ route }) => {
       displayProfileModal, 
       error, 
       response
-    } = await Services.publishedGame(PUBLISH_GAME_URL, publicGame)
-
+    } = await Services.sendRequest(PUBLISH_GAME_URL, publicGame)
+    // console.log("response = ", response)
     if (response && response.ok) {
       navigation.navigate("Play", { game: response.game })
     }
@@ -65,7 +65,7 @@ const Publish = ({ route }) => {
     <View style={styles.screenContainer}>
       <IconHeader type={["home-outline"]} paths={["Home"]} />
       {/* EditTitle */}
-      <View style={styles.titleContainer}>
+      <View style={styles.editTitleContainer}>
         <TextInput 
             style={styles.title} 
             value={title}
@@ -74,7 +74,7 @@ const Publish = ({ route }) => {
         <Feather name="edit-3" size={20}/>
       </View>
       {/* EditGrid */}
-      <View style={[styles.gridContainer, {bottom: rows === cols ? "40%" : "45%"}]}>
+      <View style={[styles.gridContainer, {bottom: rows === cols ? "35%" : "39%"}]}>
         {Array.from({length: rows}).map((_, rowIndex) => (
           <View key={rowIndex} style={styles.gridRow}>
             {Array.from({length: cols}).map((_, colIndex) => {
@@ -119,11 +119,13 @@ const Publish = ({ route }) => {
 const styles = StyleSheet.create({
   screenContainer: {
     position: "relative",
+    alignItems: "center",
     height: "100%",
     backgroundColor: "#FAF9F6",
   },
-  titleContainer: {
-    marginTop: 60,
+  editTitleContainer: {
+    marginTop: 88,
+    width: "56%",
     height: 20,
     flexDirection: "row",
     borderTopColor: "transparent",
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   pickerHelper: {
     height: 50,
     position: "absolute",
-    bottom: "37%",
+    bottom: "32%",
     left: "35%",
     right: "35%",
     backgroundColor: "#FAF9F6",
@@ -162,9 +164,9 @@ const styles = StyleSheet.create({
   },
   picker: {
     position: "absolute",
+    bottom: "17%",
     left: "35%",
     right: "35%",
-    bottom: "22%",
     height: 165,
     marginVertical: 0,
     overflow: "hidden",

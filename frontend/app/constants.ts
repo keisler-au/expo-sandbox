@@ -1,5 +1,5 @@
 
-const DYNAMIC_URL = "3614"
+const DYNAMIC_URL = "2a64"
 const SERVER = `${DYNAMIC_URL}-80-201-246-194.ngrok-free.app`
 
 const BASE_HTTP =
@@ -8,13 +8,14 @@ const BASE_HTTP =
     : "https://" + SERVER;
     
 export const PUBLISH_GAME_URL = BASE_HTTP + "/game/publish_game/";
-export const JOIN_GAME_URL = BASE_HTTP + "/game/join_game/?game=$";
+export const JOIN_GAME_URL = BASE_HTTP + "/game/join_game/";
+export const CREATE_PLAYER_URL = BASE_HTTP + "/game/create_player/"
 
 
 const BASE_SOCKET =
   process.env.NODE_ENV === "production"
   ? ""
-  : "ws:/" + SERVER;
+  : "wss://" + SERVER;
 
 export const RECIEVE_GAME_UPDATES_URL = BASE_SOCKET + "/ws/socket-server/";
 
