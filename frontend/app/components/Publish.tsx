@@ -23,7 +23,7 @@ const Publish = ({ route }) => {
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
-  const [title, setTitle] = useState("GameA1B2C3");
+  const [title, setTitle] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState<boolean | string>(false);
 
@@ -58,7 +58,6 @@ const Publish = ({ route }) => {
         title, values: game.slice(0, rows).map(row => row.slice(0,cols)), player_id: player.id 
       };
       const { response, error } = await Services.sendRequest(PUBLISH_GAME_URL, data)
-      console.log("pbulish = '", response, error)
       if (response && response.ok) {
         navigation.navigate("Play", { game: response.game, player })
       }
@@ -73,6 +72,7 @@ const Publish = ({ route }) => {
       {/* EditTitle */}
       <View style={styles.editTitleContainer}>
         <TextInput 
+            placeholder='Game Name'
             style={styles.title} 
             value={title}
             onChangeText={(value) => setTitle(value)}
@@ -145,6 +145,8 @@ const styles = StyleSheet.create({
     fontSize: 18,        
   },
   gridContainer: {
+    borderWidth: 0.5,
+
     position: "absolute",
     right: "5%",
     left: "5%",
@@ -152,10 +154,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   gridText: {
+    borderWidth: 0.5,
+
     fontSize: 15,
     textAlign: "center",
     fontWeight: 'bold',
-    borderWidth: 1,
+    // borderWidth: 1,
     borderStyle: "solid",
     borderColor: "black",
   },

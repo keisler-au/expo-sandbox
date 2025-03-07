@@ -14,27 +14,32 @@ const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
 export const gridStyles = (raiseSquare = null, rows = 5, columns = 5) =>
   StyleSheet.create({
     gridContainer: {
+      borderWidth: 1,
+      height: GRID_SIZE_1 + 2,
+      width: GRID_SIZE_1 + 2,
+
       flexWrap: 'wrap',
-      height: GRID_SIZE_1 + 7,
-      width: GRID_SIZE_1 + 7,
-      borderWidth: 3,
+      // height: GRID_SIZE_1 + 7,
+      // width: GRID_SIZE_1 + 7,
+      // borderWidth: 3,
       borderRadius: 5,
-      borderColor: 'black',
-      backgroundColor: 'black',
+      // borderColor: 'black',
+      // backgroundColor: 'black',
     },
     square: {
+      borderWidth: .2,
+
       height: GRID_SIZE_1 / rows,
       width: GRID_SIZE_1 / columns,
       justifyContent: 'center',
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: 'black',
-      borderRadius: 2,
-
-      backgroundColor: MAIN_SQUARE_COLOR,
+      // borderWidth: 1,
+      // borderColor: 'black',
+      // borderRadius: 2,
+      // backgroundColor: MAIN_SQUARE_COLOR,
     },
     text: {
-      color: 'rgb(255, 224, 160)',
+      // color: 'rgb(255, 224, 160)',
     },
   });
 

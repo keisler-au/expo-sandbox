@@ -124,7 +124,8 @@ const VerificationCodeInput = ({ joinGame }) => {
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
               onFocus={() => setActive(true)}
-              selectionColor={CODE_BOX_OUTLINE_COLOR}
+              // selectionColor={CODE_BOX_OUTLINE_COLOR}
+              selectionColor="black"
             />  
           </View>
             : <TextInput
@@ -137,7 +138,8 @@ const VerificationCodeInput = ({ joinGame }) => {
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
               onFocus={() => setActive(true)}
-              selectionColor={CODE_BOX_OUTLINE_COLOR}
+              // selectionColor={CODE_BOX_OUTLINE_COLOR}
+              selectionColor="black"
             />
         ))}
       </View>
@@ -157,20 +159,24 @@ const VerificationCodeInput = ({ joinGame }) => {
 
 const containerStyles = (active = false) =>
   StyleSheet.create({
+    top: active ? 50 : 250,
+    paddingTop: active ? 185 : 0,
+    backgroundColor: "#F0F0F0",
+
     position: active ? 'absolute' : 'relative',
-    paddingTop: active ? 265 : 0,
-    top: active ? 0 : 200,
+    // paddingTop: active ? 265 : 0,
+    // top: active ? 0 : 200,
     bottom: 0,
     right: 0,
     left: 0,
     alignItems: 'center',
-    backgroundColor: SCREEN_BACKGROUND_COLOR,
+    // backgroundColor: SCREEN_BACKGROUND_COLOR,
     zIndex: 100,
   });
 
 const styles = StyleSheet.create({
   label: {
-    color: SCREEN_TEXT_COLOR,
+    // color: SCREEN_TEXT_COLOR,
     fontWeight: 'bold',
     fontFamily: MAIN_FONT_FAMILY,
     fontSize: 18,
@@ -184,15 +190,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 50,
     borderWidth: 1,
-    borderColor: CODE_BOX_OUTLINE_COLOR,
+    // borderColor: CODE_BOX_OUTLINE_COLOR,
     // opacity: 0.5,
     textAlign: 'center',
     fontSize: 20,
     borderRadius: 5,
-    color: SCREEN_TEXT_COLOR,
+    // color: SCREEN_TEXT_COLOR,
   },
   dash: {
-    backgroundColor: SCREEN_TEXT_COLOR,
+    backgroundColor: "black",
+
+    // backgroundColor: SCREEN_TEXT_COLOR,
     alignSelf: 'center',
     opacity: 0.5,
     height: 1,
@@ -200,14 +208,14 @@ const styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1,
-    borderColor: SCREEN_TEXT_COLOR,
+    // borderColor: SCREEN_TEXT_COLOR,
     borderRadius: 8,
     padding: 8,
     marginTop: 35,
     // opacity: 0.5,
   },
   buttonText: {
-    color: SCREEN_TEXT_COLOR,
+    // color: SCREEN_TEXT_COLOR,
     fontFamily: MAIN_FONT_FAMILY,
     fontSize: 23,
   },

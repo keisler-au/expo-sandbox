@@ -15,14 +15,14 @@ const IconHeader = ({type, paths, onChange = undefined}) => {
         <Ionicons
           name={type[0]}
           size={30}
-          color={SCREEN_TEXT_COLOR}
+          // color={SCREEN_TEXT_COLOR}
         />
       </TouchableOpacity>
       {type[1] && <TouchableOpacity onPress={onChange}>
         <Ionicons
           name={type[1]}
           size={30}
-          color={SCREEN_TEXT_COLOR}
+          // color={SCREEN_TEXT_COLOR}
         />
       </TouchableOpacity>}
     </View>

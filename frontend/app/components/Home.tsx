@@ -33,20 +33,24 @@ import CreatePlayerModal from './CreateProfileModal';
 const { width } = Dimensions.get('window');
 
 const GRID_CONTAINER_SIZE = GRID_SIZE + 15;
-const GRIDSET_HEADER_SIZE = width / 1.25;
-const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
-const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
-const MAIN_SQUARE_COLOR = 'rgb(50, 50, 50)';
+const GRIDSET_HEADER_SIZE = width / 1.85;
+const BOX_NUM = 3;
+// const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
+// const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
+// const MAIN_SQUARE_COLOR = 'rgb(50, 50, 50)';
 const MAIN_FONT_FAMILY = 'Verdana';
 
+const SCREEN_TEXT_COLOR = '';
+const MAIN_SQUARE_COLOR = '';
+const SCREEN_BACKGROUND_COLOR = '';
 
 
 
 
 const GridTemplate = () => (
-  Array.from({ length: 5 }).map((_, rowIndex) => (
+  Array.from({ length: BOX_NUM }).map((_, rowIndex) => (
     <View key={rowIndex} style={styles.gridsetHeaderRow}>
-      {Array.from({ length: 5 }).map((_, colIndex) => (
+      {Array.from({ length: BOX_NUM }).map((_, colIndex) => (
         <View key={colIndex} style={styles.gridsetHeaderSquare} />
       ))}
     </View>
@@ -60,8 +64,10 @@ const GridsetHeaderBackground = () => (
     style={{ position: 'absolute', borderRadius: 50 }}>
     <Defs>
       <RadialGradient id="grad" cx="50%" cy="50%" r="90%">
-        <Stop offset="20%" stopColor="rgb(14, 14, 15)" stopOpacity="1" />
-        <Stop offset="100%" stopColor="rgb(79,77,77)" stopOpacity="1" />
+        {/* <Stop offset="20%" stopColor={"rgb(14, 14, 15)"} stopOpacity="1" />
+        <Stop offset="100%" stopColor="rgb(79,77,77)" stopOpacity="1" /> */}
+        <Stop offset="20%" stopColor="" stopOpacity="1" />
+        <Stop offset="100%" stopColor="" stopOpacity="1" />
       </RadialGradient>
     </Defs>
     <Rect width="100%" height="100%" fill="url(#grad)" rx="22" ry="22" />
@@ -118,7 +124,7 @@ const Home = memo(() => {
         activeOpacity={1}
         style={styles.gridsetHeader}
       >
-        <GridsetHeaderBackground />
+        {/* <GridsetHeaderBackground /> */}
         <GridTemplate />
         <View style={styles.gridsetHeaderLabelContainer}>
           <Text style={styles.gridsetHeaderLabel}>{item}</Text>
@@ -162,11 +168,12 @@ const Home = memo(() => {
 const styles = StyleSheet.create({
   background: {
     height: '100%',
-    backgroundColor: SCREEN_BACKGROUND_COLOR,
+    // backgroundColor: SCREEN_BACKGROUND_COLOR,
     position: "relative",
   },
   carousel: {
-    top: 65,
+    top: 110,
+    // top: 65,
   },
   gridsetHeader: {
     alignItems: 'center',
@@ -175,47 +182,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   gridsetHeaderSquare: {
-    maxWidth: GRIDSET_HEADER_SIZE / 5,
-    height: GRIDSET_HEADER_SIZE / 5,
-    flexGrow: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 5,
-    borderColor: SCREEN_BACKGROUND_COLOR,
-  },
-  gridsetHeaderLabelContainer: {
-    position: 'absolute',
-    top: '32.5%',
-    backgroundColor: MAIN_SQUARE_COLOR,
-    borderRadius: 0,
-    width: 110,
-    height: 110,
-    justifyContent: 'center',
-    shadowColor: SCREEN_TEXT_COLOR,
+    maxWidth: 50,
+    height: 50,
+    borderWidth: 1,
+    flex: 1,
+    margin: 10,
     shadowOpacity: 0.8,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 10, // Shadow for Android
+    // shadowOpacity: 0.2,
+    // shadowRadius: completed ? 0 : 1,
+    shadowOffset: { width: 0, height: 4 },
+    opacity: 0.15,
+    borderRadius: 5,
+
+    // maxWidth: GRIDSET_HEADER_SIZE / BOX_NUM,
+    // height: GRIDSET_HEADER_SIZE / BOX_NUM,
+    // flexGrow: 1,
+    // backgroundColor: 'transparent',
+    // borderWidth: 8,
+    // borderColor: SCREEN_BACKGROUND_COLOR,
+  },
+  gridsetHeaderLabelContainer: {
+    top: "30%",
+    bottom: "30%",
+    width: "50%",
+        // backgroundColor: "blue",
+
+    position: 'absolute',
+    // top: '32.5%',
+    // backgroundColor: MAIN_SQUARE_COLOR,
+    // borderRadius: 0,
+    // width: 110,
+    // height: 110,
+    justifyContent: 'center',
+    // shadowColor: SCREEN_TEXT_COLOR,
+    // shadowOpacity: 0.8,
+    // shadowRadius: 20,
+    // elevation: 10,
   },
   gridsetHeaderLabel: {
-    color: SCREEN_TEXT_COLOR,
-    padding: 5,
-    fontSize: 16,
+    // color: "#FFF",
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
+
+    // color: SCREEN_TEXT_COLOR,
+    // padding: 5,
+    // fontSize: 16,
+    // padding: 0,
+    fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
     fontFamily: MAIN_FONT_FAMILY,
   },
   pressableScreen: {
+    // backgroundColor: "#e0e0e0",
+    backgroundColor: "#F0F0F0",
+
     position: 'absolute',
     top: 0,
     bottom: 0,
     right: 0,
     left: 0,
-    backgroundColor: SCREEN_BACKGROUND_COLOR,
+    // backgroundColor: SCREEN_BACKGROUND_COLOR,
   },
 });
 
 const verticalReelStyles = (numOfGrids) =>
   StyleSheet.create({
-    backgroundColor: SCREEN_BACKGROUND_COLOR,
+    // backgroundColor: SCREEN_BACKGROUND_COLOR,
     paddingTop: 120,
     paddingBottom: 60,
     minHeight: numOfGrids * (GRID_CONTAINER_SIZE + 10),
