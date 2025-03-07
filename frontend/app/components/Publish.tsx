@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { getItemAsync } from "expo-secure-store";
 import { useNavigation } from '@react-navigation/native';
@@ -9,7 +9,7 @@ import IconHeader from "./IconHeader";
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
 import Services from '../services';
-import { PUBLISH_GAME_URL } from '../constants';
+import { STORAGE_KEYS, PUBLISH_GAME_URL } from '../constants';
 
 
 const MAIN_FONT_FAMILY = 'Verdana'
@@ -19,6 +19,7 @@ const gridOptions = ['5x5', '4x5', '4x4', '3x4', '3x3'];
 
 const Publish = ({ route }) => {
   const navigation = useNavigation<any>();
+  // const [player, setPlayer] = useState();
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
@@ -31,6 +32,15 @@ const Publish = ({ route }) => {
   );
   const [game, setGame] = useState(reformattedInitialGame)
 
+    // useEffect(() => {
+    //     console.log("Player: how many times is this rendering?")
+    //     const getLocalPlayer = async () => {
+    //         const localPlayer = await getItemAsync(STORAGE_KEYS.player);
+    //         setPlayer(JSON.parse(localPlayer));
+    //     }
+    //     getLocalPlayer()
+    // }, [])
+
   const selectGridSize = (item) => {
     setRows(item[0]);
     setCols(item.slice(-1));
@@ -42,23 +52,19 @@ const Publish = ({ route }) => {
     setGame(editedGame)
   }
   const publishGame = async () => {
-    const publicGame = {
-      title: title,
-      values: game.slice(0, rows).map(row => row.slice(0,cols))
-    };
-
-    const { 
-      displayProfileModal, 
-      error, 
-      response
-    } = await Services.sendRequest(PUBLISH_GAME_URL, publicGame)
-    // console.log("response = ", response)
-    if (response && response.ok) {
-      navigation.navigate("Play", { game: response.game })
+    const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
+    if (player) {
+      const data = { 
+        title, values: game.slice(0, rows).map(row => row.slice(0,cols)), player_id: player.id 
+      };
+      const { response, error } = await Services.sendRequest(PUBLISH_GAME_URL, data)
+      console.log("pbulish = '", response, error)
+      if (response && response.ok) {
+        navigation.navigate("Play", { game: response.game, player })
+      }
+      setError(error)
     }
-
-    setModalVisible(displayProfileModal)
-    setError(error)
+    setModalVisible(!player)
   }
 
   return (

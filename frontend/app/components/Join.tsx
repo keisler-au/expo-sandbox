@@ -14,6 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
 import { getItemAsync } from 'expo-secure-store';
+import constants, { JOIN_GAME_URL, STORAGE_KEYS } from '../constants';
+import Services from '../services';
 
 
 const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
@@ -22,6 +24,7 @@ const CODE_BOX_OUTLINE_COLOR = 'rgba(212, 175, 55, 0.5)';
 const MAIN_FONT_FAMILY = 'Verdana';
 
 const VerificationCodeInput = ({ joinGame }) => {
+  // const [player, setPlayer] = useState();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
@@ -30,16 +33,28 @@ const VerificationCodeInput = ({ joinGame }) => {
   const inputs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation();
 
+
+    // useEffect(() => {
+    //     console.log("Player: how many times is this rendering?")
+    //     const getLocalPlayer = async () => {
+    //         const localPlayer = await getItemAsync(STORAGE_KEYS.player);
+    //         setPlayer(JSON.parse(localPlayer));
+    //     }
+    //     getLocalPlayer()
+    // }, [])
+
   useEffect(() => {
     const enterPreviousGameCode = async () => {
-      const previousGame = await getItemAsync("offlineGameState");
+      const previousGame = JSON.parse(await getItemAsync(STORAGE_KEYS.offlineGameState));
       if (previousGame && joinGame) {
-        // if (previousGame.last_updated < 3 hours ago) {
-        //   setCode(previousGame.code.split(""));
-        //   // hopefully this automatically brings up the keyboard and pushed the join game input into view
-        //   inputs.current[-1]?.focus();
-        // }
-
+        const currentTime = new Date();
+        const lastUpdatedTime = new Date(previousGame.lastUpdated);
+        const threeHours = 3 * (60 * 60 * 1000)
+        if ((currentTime - lastUpdatedTime) < threeHours) {
+          setCode(previousGame.code.split(""));
+          // inputs.current[inputs.current.length-1]?.focus();
+          setSubmit(true);
+        }
       }
     }
     enterPreviousGameCode();
@@ -76,19 +91,17 @@ const VerificationCodeInput = ({ joinGame }) => {
     Keyboard.dismiss();
   };
 
-  const connectToGame = () => {
-    let displayProfileModal = true;
-    // check player
-    // check error
-    // check last updated and push to database
-    // check response 
-      // -> if failed then check if offlineGameStatus.code matches code
-      // -> if it does match, then pass the offline game into the route
-    // if (localStorage.getItem("player")) {
-    //   navigation.navigate("Play" {game: response.game || });
-    //   displayProfileModal = false;
-    // }
-    // setModalVisible(displayProfileModal);
+  const connectToGame = async () => {
+    const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
+    if (player) {
+      const data = { code: code.join(""), player};
+      const { response, error } = await Services.sendRequest(JOIN_GAME_URL, data);
+      if (response && response.ok) {
+        navigation.navigate("Play", { game: response.game, player })
+      }
+      setError(error) 
+    }
+    setModalVisible(!player);
   }
 
   return (
@@ -190,8 +203,8 @@ const styles = StyleSheet.create({
     borderColor: SCREEN_TEXT_COLOR,
     borderRadius: 8,
     padding: 8,
-    marginTop: 50,
-    opacity: 0.5,
+    marginTop: 35,
+    // opacity: 0.5,
   },
   buttonText: {
     color: SCREEN_TEXT_COLOR,

@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Share} from 'react-native';
 import useWebSocket from 'react-use-websocket';
-import {shareAsync} from 'expo-sharing';
+// import {shareAsync} from 'expo-sharing';
 import IconHeader from "./IconHeader"
 import { Feather, Ionicons } from '@expo/vector-icons';
 import BottomSheet from 'react-native-simple-bottom-sheet';
@@ -9,7 +9,7 @@ import NetInfo, { refresh } from '@react-native-community/netinfo';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { isEqual } from 'lodash';
-import { RECIEVE_GAME_UPDATES_URL } from '../constants';
+import { STORAGE_KEYS, RECIEVE_GAME_UPDATES_URL } from '../constants';
 
 
 
@@ -25,9 +25,21 @@ const formatTime = (dateString: string) => {
     });
 }
 
-const addDisplayTextDetails= (square) => {
+const addDisplayTextDetails= (square, playrId) => {
     const completedDisplays = ["value", "completed_by", "last_updated"]
-    const currentDisplayIndex = square.displayTextIndex == null ? 2 : square.displayTextIndex;
+    // local displayText may not have been set yet because:
+    // 1. Task was incomplete, displayText gets set upon completion, touching moves to next index 
+    // 2. Task was completed by remote player, displayText is only set on touch, not on completion
+    // This means that remotely completed squares need to skip an index in order to keep up
+    const taskWasIncomplete = square.displayTextIndex == null && square.completed_by.id === playrId;
+    const remotePlayerCompleted = square.displayTextIndex == null;
+    const incompleteStartingIndex = 2;
+    const remoteCompletionStartingIndex = 0;
+    const currentDisplayIndex = (
+        taskWasIncomplete ? incompleteStartingIndex 
+        : remotePlayerCompleted ? remoteCompletionStartingIndex 
+        : square.displayTextIndex
+    );
     const displayTextIndex = (currentDisplayIndex + 1) % completedDisplays.length;
     let displayText = square[completedDisplays[displayTextIndex]];
     switch (displayTextIndex) {
@@ -35,25 +47,25 @@ const addDisplayTextDetails= (square) => {
             displayText = formatTime(displayText);
             break;
         case 1: 
-            displayText = JSON.parse(displayText).name
+            displayText = displayText.name
             break;
     }
     return {...square, displayText, displayTextIndex}
 }
 
 const saveToQueue = async (square) => {
-    const storedData = await getItemAsync("offlineUpdatesQueue");
+    const storedData = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     const dataArray = storedData ? JSON.parse(storedData) : [];
     dataArray.push(square);
-    setItemAsync("offlineUpdatesQueue", JSON.stringify(dataArray));
+    setItemAsync(STORAGE_KEYS.offlineUpdatesQueue, JSON.stringify(dataArray));
 }
 
 const sendSavedQueue = async (sendJsonMessage) => {
-    const offlineUpdatesQueue = await getItemAsync("offlineUpdatesQueue");
+    const offlineUpdatesQueue = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     if (offlineUpdatesQueue) {
         const queue = JSON.parse(offlineUpdatesQueue)
-        queue.forEach(square => sendJsonMessage(JSON.stringify(square)))
-        await deleteItemAsync("offlineUpdatesQueue");
+        queue.forEach(square => sendJsonMessage(square))
+        await deleteItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     }
 }
 
@@ -67,52 +79,27 @@ const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
 }
 
 
+
+
 const Play = ({ route }) => {
     const [game, setGame] = useState(route.params.game.tasks);
-    const [player, setPlayer] = useState();
     const [saveGame, setSaveGame] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [focusedSquare, setFocusedSquare] = useState({});
     const [sendCompletedSquare, setSendCompletedSquare] = useState(null);
-    // const [completedDisplayText, setCompletedDisplayText] = useState(null);
     const [isOffline, setIsOffline] = useState(null);
-    // const wsRef = useRef();
-    // const [wsRetryAttempts, setWSRetryAttempts] = useState(0);
-    // const wsMaxRetries = 15;
-
+    const player = route.params.player;
     const rows = game.length;
     const cols = game[0].length;
-
-
-
-    const refreshGameWithCompletedSquare = (square) => {
-        square = addDisplayTextDetails(square)
-        setGame(prevGame => prevGame.map(row => row.map(prevSquare =>
-                    prevSquare.id === square.id 
-                    ? square
-                    : prevSquare
-                )
-            )
-        )
-    }
-
-    // useEffect - to save local play on first entry
-    useEffect(() => {
-        console.log("Player: how many times is this rendering?")
-        const getLocalPlayer = async () => {
-            const localPlayer = await getItemAsync("player");
-            setPlayer(localPlayer);
-        }
-        getLocalPlayer()
-    }, [])
 
     // useEffect - to save game to local storage on first entry
     useEffect(() => {
         console.log("Save Game: how many times is this rendering?")
         const saveGameToStorage = async () => { 
-            route.params.game.tasks = game;
-            route.params.game.last_updated = Date.now();
-            setItemAsync("offlineGameState", JSON.stringify(route.params.game));
+            let offlineGame = {...route.params.game}
+            offlineGame.tasks = game;
+            offlineGame.lastUpdated = Date.now();
+            setItemAsync(STORAGE_KEYS.offlineGameState, JSON.stringify(offlineGame));
             setSaveGame(false);
         }
         saveGame && route.params.game && saveGameToStorage();
@@ -127,25 +114,21 @@ const Play = ({ route }) => {
 
         return () => unsubscribe();
     }, []);
-
-    // retry mechanism of sockets
-
-    // Recieving completed squares from network
-    // 
-    const WS_URL = `${RECIEVE_GAME_UPDATES_URL}/${game.id}/`;
-    const wsMaxRetries = 5;
     
-    const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, {
-        shouldReconnect: (closeEvent) => true,
-        reconnectAttempts: wsMaxRetries,
-        reconnectInterval: 1000,
-        onOpen: () => {
-            console.log("WebSocket connected");
-        },
-        onClose: (event) => {
-            console.log(`WebSocket closed: ${event.reason}, attempting to reconnect...`);
-        },
-    });
+    const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(
+        `${RECIEVE_GAME_UPDATES_URL}/${game.id}/`, 
+        {
+            shouldReconnect: (closeEvent) => true,
+            reconnectAttempts: 15,
+            reconnectInterval: 1000,
+            onOpen: () => {
+                console.log("WebSocket connected");
+            },
+            onClose: (event) => {
+                console.log(`WebSocket closed: ${event.reason}, attempting to reconnect...`);
+            },
+        }
+    );
 
     useEffect(() => {
         if (lastJsonMessage) {
@@ -178,15 +161,20 @@ const Play = ({ route }) => {
         }
     }, [isOffline, sendCompletedSquare]); 
 
-    const shareContent = async () => {
-        // TODO
-        try {
-            await shareAsync('https://example.com');
-            } catch (error) {
-            console.error('Error sharing content:', error);
-            }
-        };
-    
+    const refreshGameWithCompletedSquare = (square) => {
+        // Change the display text of the square and save it into game state
+        square = addDisplayTextDetails(square)
+        setGame(prevGame => prevGame.map(row => row.map(prevSquare =>
+                    prevSquare.id === square.id 
+                    ? square
+                    : prevSquare
+                )
+            )
+        )
+        setSaveGame(true);
+    }
+
+    const shareContent = async () => await Share.share({message: route.params.game.code})
 
     const taskCompleted = async (square) => { 
         const currentSquare = game[square.grid_row][square.grid_column];
@@ -202,10 +190,7 @@ const Play = ({ route }) => {
     }
 
     const taskDisplayChange = (square) => {
-        if (square.completed) {
-            // Change the display text of the square and save it into game state
-            refreshGameWithCompletedSquare(square)
-        }
+        square.completed && refreshGameWithCompletedSquare(square, player.id)
         setFocusedSquare(square);
         setModalVisible(!square.completed)
     }
@@ -215,8 +200,8 @@ const Play = ({ route }) => {
                 <IconHeader type={["home-outline"]} paths={["Home"]} />
                 <Text style={styles.gameCode}>Game Code</Text>
                 <View style={styles.shareContainer}>            
-                    <Text style={styles.code}>FUCK FUCKING FUCKER</Text>
-                    <Feather name="share" onPress={shareContent} size={20}/>
+                    <Text style={styles.code}>{route.params.game.code}</Text>
+                    <Feather name="share" onPress={shareContent} size={25}/>
                 </View>
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>{route.params.game.title}</Text>
@@ -240,7 +225,7 @@ const Play = ({ route }) => {
                                     <Text
                                         style={[styles.gridText]}
                                     >
-                                        {square.completed
+                                        {square.completed && square.displayText
                                             ? square.displayText
                                             : square.value}
                                     </Text>
@@ -292,10 +277,13 @@ const Play = ({ route }) => {
                     outerContentStyle={{backgroundColor: "#ffffff" }}
                 >
                     <View style={styles.users}>
-                        <View style={styles.profileContainer}>
-                            <Ionicons name="person-circle-outline" size={20} />
-                            <Text>Player Name 1</Text>
-                        </View>
+                        {route.params.game.players.map(player => 
+                            <View key={player.id} style={styles.profileContainer}>
+                                <Ionicons name="person-circle-outline" size={20} />
+                                <Text>{player.name}</Text>
+                            </View>
+                        )}
+{/*  
                         <View style={styles.profileContainer}>
                             <Ionicons name="person-circle-outline" size={20} />
                             <Text>Player Name 2</Text>
@@ -307,7 +295,7 @@ const Play = ({ route }) => {
                         <View style={styles.profileContainer}>
                             <Ionicons name="person-circle-outline" size={20} />
                             <Text>Player Name 4</Text>
-                        </View>
+                        </View> */}
                     </View>
                 </BottomSheet>
             </View>
@@ -350,7 +338,9 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     code: {
-        fontSize: 18
+        marginTop: 5,
+        letterSpacing: 4,
+        fontSize: 25
     },
     titleContainer: {
         marginTop: 60,
@@ -368,7 +358,7 @@ const styles = StyleSheet.create({
         textAlign: "center",   
     },
     gridContainer: {
-        marginTop: 60,
+        marginTop: 45,
         borderWidth: .5,
         borderStyle: "solid",
         borderColor: "black",
@@ -450,10 +440,12 @@ const styles = StyleSheet.create({
     users: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 20
+        gap: 20,
+        paddingBottom: 20,
+        paddingLeft: 20,
     },
     profileContainer: {
         flexDirection: "row",
-        gap: 10
+        gap: 10,
     },
 })

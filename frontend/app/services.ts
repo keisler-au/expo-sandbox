@@ -1,26 +1,21 @@
 import { getItem, getItemAsync } from "expo-secure-store";
+import { STORAGE_KEYS } from "./constants";
 
 
 class Services {
     static async sendRequest (url: string, data: any) {
-        let displayProfileModal = true;
-        let error: boolean | string = false;
         let response;
+        let error: boolean | string = false;
 
-        const player = await getItemAsync("player");
-        if (player) {
-            try {
-                response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify( {data} ),
-                });
-            } catch (e) {
-                console.log(e.toString())
-                error = "We failed to connect to the server and so were not able to enter the game. Please try again.";
-            } finally {
-                displayProfileModal = false;
-            }
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify( {data} ),
+            });
+        } catch (e) {
+            console.log(e.toString())
+            error = "We failed to connect to the server and so were not able to enter the game. Please try again.";
         }
 
         if (response?.ok) {
@@ -31,12 +26,7 @@ class Services {
             error = "The game code used did not connect, please try again."
         }
 
-        const result = {
-            displayProfileModal,
-            error,
-            response
-        }
-        return result;
+        return { response, error, }
     }
 }
 

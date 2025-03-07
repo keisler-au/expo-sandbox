@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { getItemAsync, setItemAsync } from 'expo-secure-store';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import Services from '../services';
-import { CREATE_PLAYER_URL } from '../constants';
+import { CREATE_PLAYER_URL, STORAGE_KEYS } from '../constants';
 import FailedConnectionModal from './FailedConnectionModal';
 
 const CreatePlayerModal = ({ displayModal, onClose }) => {
@@ -12,25 +12,24 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
 
     useEffect(() => {
       const getName = async () => {
-        const player = await getItemAsync("player");
-        if (player) setName(JSON.parse(player).name);
+        const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
+        player && setName(player.name);
       }
-      
-      if (!name) getName();
+      name === undefined && getName();
     }, [displayModal, name])
 
     const handleSubmit = async () => {
-        const { 
-          error, 
-          response
-        } = await Services.sendRequest(CREATE_PLAYER_URL, name)
+      const { 
+        response,
+        error, 
+      } = await Services.sendRequest(CREATE_PLAYER_URL, name)
 
-        if (response && response.ok) {
-          setName(response.player.name)
-          setItemAsync("player", JSON.stringify(response.player))
-          onClose()
-        }
-        setError(error)
+      if (response && response.ok) {
+        setName(response.player.name)
+        setItemAsync(STORAGE_KEYS.player, JSON.stringify(response.player))
+        onClose()
+      }
+      setError(error)
     };
 
     return (
