@@ -5,7 +5,7 @@ import Home from './components/Home';
 import Publish from './components/Publish';
 import Settings from './components/Settings';
 import Play from './components/Play';
-
+import Carousel from './components/Test';
 
 
 
@@ -20,6 +20,7 @@ export default function Index() {
 
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Test" component={Carousel} />
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Settings" component={Settings} />
       <Stack.Screen name="Publish" component={Publish} />

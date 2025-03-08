@@ -18,6 +18,7 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
+import { useSharedValue } from 'react-native-reanimated';
 
 import bingoGames from '../templateFixtures';
 
@@ -26,6 +27,7 @@ import VerificationCodeInput from './Join';
 import IconHeader from './IconHeader';
 import { getItemAsync } from 'expo-secure-store';
 import CreatePlayerModal from './CreateProfileModal';
+
 
 
 
@@ -132,6 +134,7 @@ const Home = memo(() => {
       </TouchableOpacity>
     );
   };
+  const progress = useSharedValue<number>(0);
 
   return (
     <SafeAreaView style={styles.background}>
@@ -146,12 +149,20 @@ const Home = memo(() => {
         height={GRIDSET_HEADER_SIZE}
         style={styles.carousel}
         // autoPlay={!expanded}
-        autoPlay={false}
-        autoPlayInterval={1000}
+        // autoPlay={false}
+        // autoPlayInterval={1000}
+        // autoPlay
+        snapEnabled
         data={Object.keys(bingoGames)}
-        scrollAnimationDuration={1000}
-        windowSize={2}
+        scrollAnimationDuration={1200}
+        // windowSize={2}
         renderItem={renderGridsetHeader}
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 0.9,
+          parallaxScrollingOffset: 50,
+        }}
+        onProgressChange={progress}
       />
       {expanded 
         ? <VerticalReel 
@@ -172,8 +183,10 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   carousel: {
-    top: 110,
+    width: width,
+    // top: 110,
     // top: 65,
+
   },
   gridsetHeader: {
     alignItems: 'center',
