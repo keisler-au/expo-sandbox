@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { getItemAsync } from "expo-secure-store";
 import { useNavigation } from '@react-navigation/native';
@@ -31,15 +31,6 @@ const Publish = ({ route }) => {
     route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows)
   );
   const [game, setGame] = useState(reformattedInitialGame)
-
-    // useEffect(() => {
-    //     console.log("Player: how many times is this rendering?")
-    //     const getLocalPlayer = async () => {
-    //         const localPlayer = await getItemAsync(STORAGE_KEYS.player);
-    //         setPlayer(JSON.parse(localPlayer));
-    //     }
-    //     getLocalPlayer()
-    // }, [])
 
   const selectGridSize = (item) => {
     setRows(item[0]);

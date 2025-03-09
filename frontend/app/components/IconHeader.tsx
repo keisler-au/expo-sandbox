@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
+import { Ionicons } from '@expo/vector-icons';
 
 
-const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
-
-const IconHeader = ({type, paths, onChange = undefined}) => {
+const IconHeader = ({type, paths, onPress = undefined}) => {
   const navigation = useNavigation();
   return ( 
     <View style={styles.navBar}>
@@ -15,14 +12,12 @@ const IconHeader = ({type, paths, onChange = undefined}) => {
         <Ionicons
           name={type[0]}
           size={30}
-          // color={SCREEN_TEXT_COLOR}
         />
       </TouchableOpacity>
-      {type[1] && <TouchableOpacity onPress={onChange}>
+      {type[1] && <TouchableOpacity onPress={onPress}>
         <Ionicons
           name={type[1]}
           size={30}
-          // color={SCREEN_TEXT_COLOR}
         />
       </TouchableOpacity>}
     </View>

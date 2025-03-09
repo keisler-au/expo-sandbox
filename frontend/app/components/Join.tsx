@@ -14,17 +14,13 @@ import { useNavigation } from '@react-navigation/native';
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
 import { getItemAsync } from 'expo-secure-store';
-import constants, { JOIN_GAME_URL, STORAGE_KEYS } from '../constants';
+import { JOIN_GAME_URL, STORAGE_KEYS } from '../constants';
 import Services from '../services';
 
 
-const SCREEN_BACKGROUND_COLOR = 'rgb(27, 33, 36)';
-const SCREEN_TEXT_COLOR = 'rgb(212, 175, 55)';
-const CODE_BOX_OUTLINE_COLOR = 'rgba(212, 175, 55, 0.5)';
 const MAIN_FONT_FAMILY = 'Verdana';
 
-const VerificationCodeInput = ({ joinGame }) => {
-  // const [player, setPlayer] = useState();
+const JoinGameInput = ({ joinGame }) => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
@@ -32,16 +28,6 @@ const VerificationCodeInput = ({ joinGame }) => {
   const [error, setError] = useState(false);
   const inputs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation();
-
-
-    // useEffect(() => {
-    //     console.log("Player: how many times is this rendering?")
-    //     const getLocalPlayer = async () => {
-    //         const localPlayer = await getItemAsync(STORAGE_KEYS.player);
-    //         setPlayer(JSON.parse(localPlayer));
-    //     }
-    //     getLocalPlayer()
-    // }, [])
 
   useEffect(() => {
     const enterPreviousGameCode = async () => {
@@ -159,24 +145,19 @@ const VerificationCodeInput = ({ joinGame }) => {
 
 const containerStyles = (active = false) =>
   StyleSheet.create({
-    top: active ? 50 : 250,
-    paddingTop: active ? 185 : 0,
-    backgroundColor: "#F0F0F0",
-
+    paddingTop: active ? 165 : 0,
     position: active ? 'absolute' : 'relative',
-    // paddingTop: active ? 265 : 0,
-    // top: active ? 0 : 200,
+    top: active ? 50 : 120,
     bottom: 0,
     right: 0,
     left: 0,
     alignItems: 'center',
-    // backgroundColor: SCREEN_BACKGROUND_COLOR,
     zIndex: 100,
+    backgroundColor: "#F0F0F0",
   });
 
 const styles = StyleSheet.create({
   label: {
-    // color: SCREEN_TEXT_COLOR,
     fontWeight: 'bold',
     fontFamily: MAIN_FONT_FAMILY,
     fontSize: 18,
@@ -190,17 +171,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 50,
     borderWidth: 1,
-    // borderColor: CODE_BOX_OUTLINE_COLOR,
-    // opacity: 0.5,
     textAlign: 'center',
     fontSize: 20,
     borderRadius: 5,
-    // color: SCREEN_TEXT_COLOR,
   },
   dash: {
     backgroundColor: "black",
-
-    // backgroundColor: SCREEN_TEXT_COLOR,
     alignSelf: 'center',
     opacity: 0.5,
     height: 1,
@@ -208,17 +184,14 @@ const styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1,
-    // borderColor: SCREEN_TEXT_COLOR,
     borderRadius: 8,
     padding: 8,
     marginTop: 35,
-    // opacity: 0.5,
   },
   buttonText: {
-    // color: SCREEN_TEXT_COLOR,
     fontFamily: MAIN_FONT_FAMILY,
     fontSize: 23,
   },
 });
 
-export default VerificationCodeInput;
+export default JoinGameInput;
