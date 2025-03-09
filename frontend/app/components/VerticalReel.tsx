@@ -1,9 +1,9 @@
-import {  Pressable, ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import {  Pressable, ScrollView, StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 
-
-const GRID_SIZE = 390 / 1.35;
+const { width } = Dimensions.get("window");
+const GRID_SIZE = width / 1.35;
 
 const VerticalReel = ({ collapseReel, expandedGridset }) => {
   const navigation = useNavigation();

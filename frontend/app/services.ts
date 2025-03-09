@@ -6,7 +6,7 @@ class Services {
     static async sendRequest (url: string, data: any) {
         let response;
         let error: boolean | string = false;
-
+        // TODO: TESTING
         try {
             response = await fetch(url, {
                 method: "POST",

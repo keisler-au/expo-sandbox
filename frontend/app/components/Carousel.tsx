@@ -6,9 +6,9 @@ import CarouselItem from "./CarouselItem";
 import bingoGames from "../templateFixtures";
 
 
-const GAME_SETS = Array(50).fill(Object.keys(bingoGames)).flat()
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.5;
+const GAME_SETS = Array(50).fill(Object.keys(bingoGames)).flat()
 
 const Carousel = ({ isVerticalReel }) => {
     const scrollX = useSharedValue(0);

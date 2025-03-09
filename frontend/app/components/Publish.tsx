@@ -10,11 +10,12 @@ import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from './FailedConnectionModal';
 import Services from '../services';
 import { STORAGE_KEYS, PUBLISH_GAME_URL } from '../constants';
+import EditableGrid from './EditableGrid';
 
 
 const MAIN_FONT_FAMILY = 'Verdana'
 
-const gridOptions = ['5x5', '4x5', '4x4', '3x4', '3x3'];
+const GRID_OPTIONS = ['5x5', '4x5', '4x4', '3x4', '3x3'];
 
 
 const Publish = ({ route }) => {
@@ -45,17 +46,22 @@ const Publish = ({ route }) => {
   const publishGame = async () => {
     if (loading) return;
     setLoading(true);
+    // TODO: TESTING
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
     if (player) {
       const data = { 
         title, values: game.slice(0, rows).map(row => row.slice(0,cols)), player_id: player.id 
       };
+      // TODO: TESTING
       const { response, error } = await Services.sendRequest(PUBLISH_GAME_URL, data)
       if (response && response.ok) {
+        // TODO: TESTING
         navigation.navigate("Play", { game: response.game, player })
       }
+      // TODO: TESTING
       setError(error);
     }
+    // TODO: TESTING
     setModalVisible(!player);
     setLoading(false);
   }
@@ -73,37 +79,14 @@ const Publish = ({ route }) => {
         />
         <Feather name="edit-3" size={20}/>
       </View>
-      {/* EditGrid */}
-      <View style={[styles.gridContainer, {bottom: rows === cols ? "35%" : "39%"}]}>
-        {Array.from({length: rows}).map((_, rowIndex) => (
-          <View key={rowIndex} style={styles.gridRow}>
-            {Array.from({length: cols}).map((_, colIndex) => {
-              return(
-                <TextInput
-                  key={colIndex + rowIndex}
-                  multiline={true}
-                  submitBehavior="blurAndSubmit"
-                  style={[styles.gridText, {
-                    height: rows === cols ? (350 / rows) : 280 / rows,
-                    width: 350 / cols,
-                  }]}
-                  value={game[rowIndex][colIndex]}
-                  onChangeText={(input) => changeGridText(input, rowIndex, colIndex)}
-                />
-              )
-            })}
-          </View>
-        ))}
-      </View>
+      <EditableGrid game={game} rows={rows} cols={cols} onChange={changeGridText} />
       <View style={styles.pickerHelper} />
       <Picker
         selectedValue={selectedGridSize}
         onValueChange={selectGridSize}
         style={styles.picker}
       >
-        {gridOptions.map((option) => (
-          <Picker.Item key={option} label={option} value={option} />
-        ))}
+        {GRID_OPTIONS.map((option) => <Picker.Item key={option} label={option} value={option} /> )}
       </Picker>
       <TouchableOpacity onPress={publishGame} activeOpacity={1} style={styles.button}>
         { loading 
@@ -138,25 +121,6 @@ const styles = StyleSheet.create({
     width: 200,
     fontSize: 18,        
   },
-  gridContainer: {
-    borderWidth: 0.5,
-
-    position: "absolute",
-    right: "5%",
-    left: "5%",
-    backgroundColor: "#FAF9F6",
-    zIndex: 2,
-  },
-  gridText: {
-    borderWidth: 0.5,
-
-    fontSize: 15,
-    textAlign: "center",
-    fontWeight: 'bold',
-    // borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "black",
-  },
   pickerHelper: {
     height: 50,
     position: "absolute",
@@ -175,9 +139,6 @@ const styles = StyleSheet.create({
     marginVertical: 0,
     overflow: "hidden",
     backgroundColor: "#FAF9F6",
-  },
-  gridRow: {
-    flexDirection: "row",
   },
   button: {
     position: "absolute",

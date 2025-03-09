@@ -25,12 +25,13 @@ const formatTime = (dateString: string) => {
     });
 }
 
+// TODO: TESTING
 const addDisplayTextDetails= (square, playrId) => {
     const completedDisplays = ["value", "completed_by", "last_updated"]
-    // local displayText may not have been set yet because:
-    // 1. Task was incomplete, displayText gets set upon completion, touching moves to next index 
-    // 2. Task was completed by remote player, displayText is only set on touch, not on completion
-    // This means that remotely completed squares need to skip an index in order to keep up
+    // Scenarios where local displayText is first set:
+    // 1. Task was locally completed, displayText set upon completion, first touch moves index along
+    // 2. Task was remotely completed, displayText is not set on completion, first touch sets it
+    //This means on first touch remotely completed squares need to skip an index in order to keep up
     const taskWasIncomplete = square.displayTextIndex == null && square.completed_by.id === playrId;
     const remotePlayerCompleted = square.displayTextIndex == null;
     const incompleteStartingIndex = 2;
@@ -54,6 +55,7 @@ const addDisplayTextDetails= (square, playrId) => {
 }
 
 const saveToQueue = async (square) => {
+    // TODO: TESTING
     const storedData = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     const dataArray = storedData ? JSON.parse(storedData) : [];
     dataArray.push(square);
@@ -64,11 +66,14 @@ const sendSavedQueue = async (sendJsonMessage) => {
     const offlineUpdatesQueue = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     if (offlineUpdatesQueue) {
         const queue = JSON.parse(offlineUpdatesQueue)
+        // TODO: TESTING
         queue.forEach(square => sendJsonMessage(square))
+        // TODO: TESTING
         await deleteItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     }
 }
 
+// TODO: TESTING
 const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
     if (pushSquare.game_id === currentSquare.game_id) {
         const pushSquareIsEarlier = (
@@ -99,6 +104,7 @@ const Play = ({ route }) => {
             let offlineGame = {...route.params.game}
             offlineGame.tasks = game;
             offlineGame.lastUpdated = Date.now();
+            // TODO: TESTING
             setItemAsync(STORAGE_KEYS.offlineGameState, JSON.stringify(offlineGame));
             setSaveGame(false);
         }
@@ -109,7 +115,8 @@ const Play = ({ route }) => {
     useEffect(() => {
         console.log("NetInfo: how many times is this rendering?")
         const unsubscribe = NetInfo.addEventListener(state => {
-        setIsOffline(!state.isConnected);
+            // TODO: TESTING
+            setIsOffline(!state.isConnected);
         });
 
         return () => unsubscribe();
@@ -137,7 +144,9 @@ const Play = ({ route }) => {
             if (square && square.completed_by.id !== player.id) {
                 const currentSquare = game[square.grid_row][square.grid_column];
                 const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
-                if (JSON.stringify(square) === JSON.stringify(earliestSquare)) {
+                // TODO: TESTING
+                // if (JSON.stringify(square) === JSON.stringify(earliestSquare)) {
+                if (isEqual(square, earliestSquare)) {
                     refreshGameWithCompletedSquare(square);
                 }
             }
@@ -149,14 +158,18 @@ const Play = ({ route }) => {
         console.log("Sending: how many times is this rendering?")
         if (isOffline === null) return;
         if (isOffline && sendCompletedSquare) {
+            // TODO: TESTING
             saveToQueue(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (sendCompletedSquare) {
+            // TODO: TESTING
             sendJsonMessage(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (isOffline) {
+            // TODO: TESTING
             setSaveGame(true);
         } else { 
+            //TODO: TESTING
             sendSavedQueue(sendJsonMessage);
         }
     }, [isOffline, sendCompletedSquare]); 
@@ -184,8 +197,6 @@ const Play = ({ route }) => {
             refreshGameWithCompletedSquare(square);
             setSendCompletedSquare(square)
         }
-        // TODO: Modal notis and retry mechanism?
-        // setUpdateState(response.updateState)
         setModalVisible(false);
     }
 
@@ -221,12 +232,10 @@ const Play = ({ route }) => {
                                     width: 350 / cols}
                             ]}>
                                 <TouchableOpacity 
-                                    style={completeTaskStyles(square.completed)}
+                                    style={completeTaskStyles(square.completed).innerSquare}
                                     onPress={() => taskDisplayChange(square)}
                                 >
-                                    <Text
-                                        style={[styles.gridText]}
-                                    >
+                                    <Text style={[styles.gridText]}>
                                         {square.completed && square.displayText
                                             ? square.displayText
                                             : square.value}
@@ -285,19 +294,6 @@ const Play = ({ route }) => {
                                 <Text>{player.name}</Text>
                             </View>
                         )}
-{/*  
-                        <View style={styles.profileContainer}>
-                            <Ionicons name="person-circle-outline" size={20} />
-                            <Text>Player Name 2</Text>
-                        </View>
-                        <View style={styles.profileContainer}>
-                            <Ionicons name="person-circle-outline" size={20} />
-                            <Text>Player Name 3</Text>
-                        </View>
-                        <View style={styles.profileContainer}>
-                            <Ionicons name="person-circle-outline" size={20} />
-                            <Text>Player Name 4</Text>
-                        </View> */}
                     </View>
                 </BottomSheet>
             </View>
@@ -306,8 +302,8 @@ const Play = ({ route }) => {
 
 export default Play;
 
-const completeTaskStyles= (completed) => StyleSheet.create({
-    // innerSquare: {
+const completeTaskStyles= (completed: boolean) => StyleSheet.create({
+    innerSquare: {
         width: completed ? "100%": "80%",
         height: completed ? "100%": "80%",
         alignItems: "center",
@@ -315,12 +311,12 @@ const completeTaskStyles= (completed) => StyleSheet.create({
         borderWidth: completed ? 0 : 1,
         borderStyle: "solid",
         borderColor: "black",
-        elevation: 10, // Shadow for Android
+        elevation: 10,
         shadowOpacity: 0.2,
         shadowRadius: completed ? 0 : 1,
         shadowOffset: { width: 0, height: completed ? 0 : 4 },
         backgroundColor: completed ? "#e0e0e0" : "#ffffff",
-    // },
+    },
 })
 
 const styles = StyleSheet.create({
@@ -376,25 +372,8 @@ const styles = StyleSheet.create({
         borderColor: "black",
         display:"flex",
     },
-    // innerSquare: {
-    //     width: "80%",
-    //     height: "80%",
-    //     alignItems: "center",
-    //     justifyContent: "center",
-    //     borderWidth: 1,
-    //     borderStyle: "solid",
-    //     borderColor: "black",
-    //     elevation: 10, // Shadow for Android
-    //     // shadowColor: "#000",
-    //     // shadowOffset: { width: 0, height: 10 },
-    //     shadowOpacity: 0.2,
-    //     shadowRadius: 1,
-    //     shadowOffset: { width: 0, height: 4 },
-    //     backgroundColor: "#ffffff",
-    // },
     gridText: {
         fontSize: 10,
-        // fontWeight: 'bold',
         textAlign: "center",
     },
     modalContainer: {
