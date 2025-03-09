@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  ActivityIndicator,
   View,
   TextInput,
   StyleSheet,
   Text,
   Pressable,
-  Button,
   Keyboard,
   TouchableOpacity,
 } from 'react-native';
@@ -21,13 +21,15 @@ import Services from '../services';
 const MAIN_FONT_FAMILY = 'Verdana';
 
 const JoinGameInput = ({ joinGame }) => {
+  const navigation = useNavigation();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState(false);
-  const inputs = useRef<Array<TextInput | null>>([]);
-  const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
+  const inputs = useRef([]);
+
 
   useEffect(() => {
     const enterPreviousGameCode = async () => {
@@ -47,29 +49,23 @@ const JoinGameInput = ({ joinGame }) => {
   }, [joinGame])
 
   const handleChange = (text: string, index: number) => {
-    if (!/^\d?$/.test(text)) return;
-    const newCode = [...code];
+    if (!/^[A-Z0-9]*$/.test(text)) return;
+    if (text.length > 1 && text.length < 6) return;
+    let nextFocus = text && index < 5 ? index + 1 : index;
+    let newCode = [...code];
     newCode[index] = text;
+    if (text.length === 6 && !index) {
+      nextFocus = 5;
+      newCode = text.split("");
+    }
+    inputs.current[nextFocus]?.focus()
     setCode(newCode);
-
-    if (text && index < 5) {
-      inputs.current[index + 1]?.focus();
-    }
-
-    const strCode = newCode.join('');
-    if (strCode.length === 6) {
-      handleSubmit(strCode);
-    }
+    if (newCode.join('').length === 6) setSubmit(true);
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleSubmit = (enteredCode: string) => {
-    setSubmit(true)
+    const backSpaceCondition = e.nativeEvent.key === 'Backspace' && !code[index] && index > 0;
+    backSpaceCondition && inputs.current[index - 1]?.focus();
   };
 
   const handleCollapse = () => {
@@ -78,6 +74,8 @@ const JoinGameInput = ({ joinGame }) => {
   };
 
   const connectToGame = async () => {
+    if (loading) return;
+    setLoading(true);
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
     if (player) {
       const data = { code: code.join(""), player};
@@ -88,6 +86,7 @@ const JoinGameInput = ({ joinGame }) => {
       setError(error) 
     }
     setModalVisible(!player);
+    setLoading(false);
   }
 
   return (
@@ -104,13 +103,12 @@ const JoinGameInput = ({ joinGame }) => {
               key={`input-${index}`}
               ref={(el) => (inputs.current[index] = el)}
               style={styles.input}
-              keyboardType="numeric"
-              maxLength={1}
+              autoCapitalize="characters"
+              maxLength={6}
               value={digit}
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
               onFocus={() => setActive(true)}
-              // selectionColor={CODE_BOX_OUTLINE_COLOR}
               selectionColor="black"
             />  
           </View>
@@ -118,23 +116,28 @@ const JoinGameInput = ({ joinGame }) => {
               key={`input-${index}`}
               ref={(el) => (inputs.current[index] = el)}
               style={styles.input}
-              keyboardType="numeric"
-              maxLength={1}
+              autoCapitalize="characters"
+              maxLength={6}
               value={digit}
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
               onFocus={() => setActive(true)}
-              // selectionColor={CODE_BOX_OUTLINE_COLOR}
               selectionColor="black"
             />
         ))}
       </View>
       {
-        submit && <TouchableOpacity
-        onPress={connectToGame}
-        activeOpacity={1}
-        style={styles.button}
-        ><Text style={styles.buttonText}>Join Game</Text>
+        submit && 
+        <TouchableOpacity
+          onPress={connectToGame}
+          activeOpacity={1}
+          style={styles.button}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Join Game</Text>
+          )}
         </TouchableOpacity>
       }
       <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />

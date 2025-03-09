@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { ActivityIndicator, View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { getItemAsync } from "expo-secure-store";
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -19,13 +19,13 @@ const gridOptions = ['5x5', '4x5', '4x4', '3x4', '3x3'];
 
 const Publish = ({ route }) => {
   const navigation = useNavigation<any>();
-  // const [player, setPlayer] = useState();
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
   const [title, setTitle] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState<boolean | string>(false);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
     route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows)
@@ -43,6 +43,8 @@ const Publish = ({ route }) => {
     setGame(editedGame)
   }
   const publishGame = async () => {
+    if (loading) return;
+    setLoading(true);
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
     if (player) {
       const data = { 
@@ -52,9 +54,10 @@ const Publish = ({ route }) => {
       if (response && response.ok) {
         navigation.navigate("Play", { game: response.game, player })
       }
-      setError(error)
+      setError(error);
     }
-    setModalVisible(!player)
+    setModalVisible(!player);
+    setLoading(false);
   }
 
   return (
@@ -63,7 +66,7 @@ const Publish = ({ route }) => {
       {/* EditTitle */}
       <View style={styles.editTitleContainer}>
         <TextInput 
-            placeholder='Game Name'
+            placeholder='Enter Game Name'
             style={styles.title} 
             value={title}
             onChangeText={(value) => setTitle(value)}
@@ -103,9 +106,9 @@ const Publish = ({ route }) => {
         ))}
       </Picker>
       <TouchableOpacity onPress={publishGame} activeOpacity={1} style={styles.button}>
-        <Text style={styles.buttonText}>
-          Publish
-        </Text>
+        { loading 
+          ? <ActivityIndicator size="small" /> 
+          : <Text style={styles.buttonText}>Publish</Text> }
       </TouchableOpacity>
       <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />
       <FailedConnectionModal displayModal={!!error} message={error} onClose={() => setError(false)} />

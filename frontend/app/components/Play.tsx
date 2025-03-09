@@ -204,7 +204,9 @@ const Play = ({ route }) => {
                     <Feather name="share" onPress={shareContent} size={25}/>
                 </View>
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>{route.params.game.title}</Text>
+                    <Text style={styles.title}>
+                        {route.params.game.title || `Game${route.params.game.code}`}
+                    </Text>
                 </View>
                 <View style={styles.gridContainer}>
                     {game.map((row, rowIndex) => (

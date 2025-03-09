@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { getItemAsync, setItemAsync } from 'expo-secure-store';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import Services from '../services';
 import { CREATE_PLAYER_URL, STORAGE_KEYS } from '../constants';
 import FailedConnectionModal from './FailedConnectionModal';
@@ -9,6 +9,7 @@ import FailedConnectionModal from './FailedConnectionModal';
 const CreatePlayerModal = ({ displayModal, onClose }) => {
     const [name, setName] = useState();
     const [error, setError] = useState();
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
       const getName = async () => {
@@ -19,17 +20,19 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
     }, [displayModal, name])
 
     const handleSubmit = async () => {
+      if (loading) return;
+      setLoading(true);
       const { 
         response,
         error, 
       } = await Services.sendRequest(CREATE_PLAYER_URL, name)
-
       if (response && response.ok) {
         setName(response.player.name)
         setItemAsync(STORAGE_KEYS.player, JSON.stringify(response.player))
         onClose()
       }
-      setError(error)
+      setError(error);
+      setLoading(false);
     };
 
     return (
@@ -54,7 +57,10 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
               disabled={name == ""} 
               onPress={handleSubmit}
             >
-                <Text style={styles.buttonText}>Enter</Text>
+              { loading 
+                ? <ActivityIndicator size="small" />
+                : <Text style={styles.buttonText}>Enter</Text>
+              }
             </TouchableOpacity>
             </View>
         </Pressable>

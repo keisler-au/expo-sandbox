@@ -23,7 +23,7 @@ class Services {
             response.ok = true;
         } 
         if (response?.ok === false && response.status === 404) {
-            error = "The game code used did not connect, please try again."
+            error = "The game code used did not connect, please check it is correct and try again."
         }
 
         return { response, error, }
