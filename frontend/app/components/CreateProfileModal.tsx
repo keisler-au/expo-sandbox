@@ -13,6 +13,7 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
 
     useEffect(() => {
       const getName = async () => {
+        // TODO: TESTING
         const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
         player && setName(player.name);
       }
@@ -20,17 +21,18 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
     }, [displayModal, name])
 
     const handleSubmit = async () => {
+      // TODO: TESTING
       if (loading) return;
       setLoading(true);
-      const { 
-        response,
-        error, 
-      } = await Services.sendRequest(CREATE_PLAYER_URL, name)
+      // TODO: TESTING
+      const { response, error } = await Services.sendRequest(CREATE_PLAYER_URL, name);
       if (response && response.ok) {
         setName(response.player.name)
+        // TODO: TESTING
         setItemAsync(STORAGE_KEYS.player, JSON.stringify(response.player))
         onClose()
       }
+      // TODO: TESTING
       setError(error);
       setLoading(false);
     };
@@ -40,7 +42,6 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
         <Modal
             transparent={true}
             visible={displayModal}
-            // animationType="fade"
             onRequestClose={onClose}
         >
         <Pressable style={styles.modalContainer} onPress={onClose}>

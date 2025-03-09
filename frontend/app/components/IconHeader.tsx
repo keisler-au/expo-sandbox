@@ -9,17 +9,12 @@ const IconHeader = ({type, paths, onPress = undefined}) => {
   return ( 
     <View style={styles.navBar}>
       <TouchableOpacity onPress={() => navigation.navigate(paths[0])}>
-        <Ionicons
-          name={type[0]}
-          size={30}
-        />
+        <Ionicons name={type[0]} size={30} />
       </TouchableOpacity>
-      {type[1] && <TouchableOpacity onPress={onPress}>
-        <Ionicons
-          name={type[1]}
-          size={30}
-        />
-      </TouchableOpacity>}
+      { type[1] && 
+        <TouchableOpacity onPress={onPress}>
+          <Ionicons name={type[1]} size={30} />
+        </TouchableOpacity> }
     </View>
   )
 }

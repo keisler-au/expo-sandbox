@@ -13,7 +13,7 @@ import bingoGames from '../templateFixtures';
 
 const Home = memo(() => {
   const [expanded, setExpanded] = useState(false);
-  const [displayPlayerModal, setDisplayPlayerModal] = useState(false);
+  const [playerModal, setPlayerModal] = useState(false);
   const expandedGridset = useRef();
 
   const isVerticalReel = (gridset) => {
@@ -26,7 +26,7 @@ const Home = memo(() => {
       <IconHeader 
         type={["settings-outline", "person-circle-outline"]} 
         paths={["Settings", "Profile"]}
-        onPress={() => setDisplayPlayerModal(true)}
+        onPress={() => setPlayerModal(true)}
       />
       <Carousel isVerticalReel={isVerticalReel}/>
       {expanded 
@@ -35,7 +35,7 @@ const Home = memo(() => {
           expandedGridset={expandedGridset}
         /> 
         : <JoinGameInput joinGame={!expanded} />}
-        <CreatePlayerModal displayModal={displayPlayerModal} onClose={() => setDisplayPlayerModal(false)} />
+      <CreatePlayerModal displayModal={playerModal} onClose={() => setPlayerModal(false)} />
     </SafeAreaView>
 
   );

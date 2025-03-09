@@ -33,6 +33,7 @@ const JoinGameInput = ({ joinGame }) => {
 
   useEffect(() => {
     const enterPreviousGameCode = async () => {
+      // TODO: TESTING
       const previousGame = JSON.parse(await getItemAsync(STORAGE_KEYS.offlineGameState));
       if (previousGame && joinGame) {
         const currentTime = new Date();
@@ -40,7 +41,6 @@ const JoinGameInput = ({ joinGame }) => {
         const threeHours = 3 * (60 * 60 * 1000)
         if ((currentTime - lastUpdatedTime) < threeHours) {
           setCode(previousGame.code.split(""));
-          // inputs.current[inputs.current.length-1]?.focus();
           setSubmit(true);
         }
       }
@@ -48,6 +48,7 @@ const JoinGameInput = ({ joinGame }) => {
     enterPreviousGameCode();
   }, [joinGame])
 
+  // TODO: TESTING 
   const handleChange = (text: string, index: number) => {
     if (!/^[A-Z0-9]*$/.test(text)) return;
     if (text.length > 1 && text.length < 6) return;
@@ -74,17 +75,22 @@ const JoinGameInput = ({ joinGame }) => {
   };
 
   const connectToGame = async () => {
+    // TODO: TESTING
     if (loading) return;
     setLoading(true);
+    // TODO: TESTING
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
     if (player) {
       const data = { code: code.join(""), player};
+      // TODO: TESTING
       const { response, error } = await Services.sendRequest(JOIN_GAME_URL, data);
       if (response && response.ok) {
         navigation.navigate("Play", { game: response.game, player })
       }
+      // TODO: TESTING
       setError(error) 
     }
+    // TODO: TESTING
     setModalVisible(!player);
     setLoading(false);
   }
@@ -94,11 +100,8 @@ const JoinGameInput = ({ joinGame }) => {
       <Text style={styles.label}>Join</Text>
       <View style={styles.inputContainer}>
         {code.map((digit, index) => (
-          index === 3 ?
           <View key={`container-${index}`} style={{flexDirection:"row", gap: 11}}>
-            <Text key={`dash-${index}`} style={styles.dash}>
-                -
-            </Text>
+             { index === 3 && <Text key={`dash-${index}`} style={styles.dash}> - </Text> }
             <TextInput
               key={`input-${index}`}
               ref={(el) => (inputs.current[index] = el)}
@@ -110,20 +113,8 @@ const JoinGameInput = ({ joinGame }) => {
               onKeyPress={(e) => handleKeyPress(e, index)}
               onFocus={() => setActive(true)}
               selectionColor="black"
-            />  
-          </View>
-            : <TextInput
-              key={`input-${index}`}
-              ref={(el) => (inputs.current[index] = el)}
-              style={styles.input}
-              autoCapitalize="characters"
-              maxLength={6}
-              value={digit}
-              onChangeText={(text) => handleChange(text, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              onFocus={() => setActive(true)}
-              selectionColor="black"
             />
+          </View>
         ))}
       </View>
       {
@@ -179,11 +170,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dash: {
+    height: 1,
+    width: 6, 
     backgroundColor: "black",
     alignSelf: 'center',
     opacity: 0.5,
-    height: 1,
-    width: 6, 
+
   },
   button: {
     borderWidth: 1,
