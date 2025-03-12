@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Share,
-  Task,
 } from "react-native";
 import useWebSocket from "react-use-websocket";
 import IconHeader from "./IconHeader";
@@ -44,6 +43,13 @@ const sendSavedQueue = async (sendJsonMessage: Function) => {
   }
 };
 
+const updateGame = (square: Square, playerId: number, game: Square[][]) => {
+  square = addDisplayTextDetails(square, playerId);
+  let updated = game.map((row) => [...row]);
+  updated[square.grid_row][square.grid_column] = square;
+  return updated;
+};
+
 // TODO: TESTING
 // 1. Unit test
 // 2. The earliest completed square will get overridden
@@ -66,7 +72,6 @@ interface PlayProp {
     };
   };
 }
-
 const Play = ({ route }: PlayProp) => {
   const [game, setGame] = useState(route.params.game.tasks);
   const [saveGame, setSaveGame] = useState(true);
@@ -106,28 +111,17 @@ const Play = ({ route }: PlayProp) => {
     },
   );
 
-  const refreshGameWithCompletedSquare = useCallback(
-    (square: Square) => {
-      square = addDisplayTextDetails(square, player.id);
-      setGame((prevGame) =>
-        prevGame.map((row) =>
-          row.map((prevSquare) =>
-            prevSquare.id === square.id ? square : prevSquare,
-          ),
-        ),
-      );
-      setSaveGame(true);
-    },
-    [player.id],
-  );
-
   // Save game - to local storage on first entry, then on subsequent calls (saveGame state change)
   useEffect(() => {
     const saveGameToStorage = async () => {
-      let offlineGame = { ...route.params.game };
-      offlineGame.tasks = game;
-      offlineGame.lastSaved = Date.now();
-      setItemAsync(STORAGE_KEYS.offlineGameState, JSON.stringify(offlineGame));
+      setItemAsync(
+        STORAGE_KEYS.offlineGameState,
+        JSON.stringify({
+          ...route.params.game,
+          tasks: game,
+          lastSaved: Date.now(),
+        }),
+      );
       setSaveGame(false);
     };
     saveGame && route.params.game && saveGameToStorage();
@@ -148,11 +142,12 @@ const Play = ({ route }: PlayProp) => {
           currentSquare,
         );
         if (isEqual(square, earliestSquare)) {
-          refreshGameWithCompletedSquare(square);
+          setGame(updateGame(square, player.id, game));
+          setSaveGame(true);
         }
       }
     }
-  }, [lastJsonMessage, game, player.id, refreshGameWithCompletedSquare]);
+  }, [lastJsonMessage, game, player.id]);
 
   // Sending - or saving locally completed squares for future sending
   // TODO: TESTING
@@ -184,14 +179,15 @@ const Play = ({ route }: PlayProp) => {
     const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
     if (isEqual(square, earliestSquare)) {
       square = { ...square, completed: true, completed_by: player };
-      refreshGameWithCompletedSquare(square);
+      setGame(updateGame(square, player.id, game));
+      setSaveGame(true);
       setCompletedSquare(square);
     }
     setModalVisible(false);
   };
 
   const taskDisplayChange = (square: Square) => {
-    square.completed && refreshGameWithCompletedSquare(square);
+    square.completed && setGame(updateGame(square, player.id, game));
     setModalTask(square);
     setModalVisible(!square.completed);
   };
@@ -347,7 +343,7 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
     borderRightColor: "transparent",
     borderLeftColor: "transparent",
-    borderBottomColor: "black",
+    // borderBottomColor: "black",
     borderWidth: 2,
   },
   title: {

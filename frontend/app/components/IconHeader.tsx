@@ -7,6 +7,7 @@ interface IconHeaderProps {
   icons: {
     type: string;
     path: string;
+    modal?: boolean;
   }[];
   onPress?: Function;
 }
@@ -14,10 +15,11 @@ const IconHeader = ({ icons, onPress }: IconHeaderProps) => {
   const navigation = useNavigation<any>();
   return (
     <View style={styles.navBar}>
-      {icons.map((icon) => (
+      {icons.map((icon, index) => (
         <TouchableOpacity
+          key={index}
           onPress={() =>
-            typeof onPress === "function"
+            icon.modal && typeof onPress === "function"
               ? onPress()
               : navigation.navigate(icon.path)
           }

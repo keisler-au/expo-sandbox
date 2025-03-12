@@ -33,9 +33,8 @@ const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
   const inputs = useRef<(TextInput | null)[]>([]);
   const netInfo = useNetInfo();
   const isOffline = !netInfo.isConnected;
-  console.log(code);
+
   useEffect(() => {
-    console.log("hitting ?");
     const enterPreviousGameCode = async () => {
       // TODO: TESTING
       const storedGame = await getItemAsync(STORAGE_KEYS.offlineGameState);

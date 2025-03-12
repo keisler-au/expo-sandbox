@@ -22,6 +22,7 @@ const Home = () => {
     {
       type: "person-circle-outline",
       path: "Profile",
+      modal: true,
     },
   ];
 
