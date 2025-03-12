@@ -9,46 +9,46 @@ import {
   Keyboard,
   TouchableOpacity,
 } from "react-native";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from "./FailedConnectionModal";
 import { getItemAsync } from "expo-secure-store";
 import { JOIN_GAME_URL, STORAGE_KEYS } from "../constants";
-import Services from "../services";
-import { Game, RootStackParamList } from "../types";
+import useGameEntry from "../utils/useGameEntry";
+import { store } from "expo-router/build/global-state/router-store";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
-const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
-  const navigation =
-    useNavigation<NavigationProp<RootStackParamList, "Play">>();
+const JoinGameInput = () => {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
-  const [previousGame, setPreviousGame] = useState<Game | false>(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState<string | boolean>(false);
-  const [loading, setLoading] = useState(false);
+  const [previousGame, setPreviousGame] = useState();
   const inputs = useRef<(TextInput | null)[]>([]);
   const netInfo = useNetInfo();
   const isOffline = !netInfo.isConnected;
+  const {
+    loading,
+    playerModal,
+    setPlayerModal,
+    error,
+    setError,
+    handleGameEntry,
+  } = useGameEntry();
 
   useEffect(() => {
     const enterPreviousGameCode = async () => {
       // TODO: TESTING
       const storedGame = await getItemAsync(STORAGE_KEYS.offlineGameState);
-      const loadedGame: Game | false = storedGame && JSON.parse(storedGame);
-      if (loadedGame && loadedGame.lastSaved && joinGameVisible) {
+      const game = JSON.parse(storedGame || "{}");
+      if (game) {
+        setPreviousGame(game);
         const threeHours = 3 * (60 * 60 * 1000);
-        if (
-          new Date().getTime() - new Date(loadedGame.lastSaved).getTime() <
-          threeHours
-        ) {
-          setCode(loadedGame.code.split(""));
+        const previousSave = new Date(game.lastSaved).getTime();
+        if (new Date().getTime() - previousSave < threeHours) {
+          setCode(game.code.split(""));
           setSubmit(true);
         }
-        setPreviousGame(loadedGame);
       }
     };
     enterPreviousGameCode();
@@ -85,26 +85,12 @@ const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
   // 1. Unit test
   // 2. If it fails it will clearly be isolate to this function
   const connectToGame = async () => {
-    if (loading) return;
-    setLoading(true);
-    const storedPlayer = await getItemAsync(STORAGE_KEYS.player);
-    const player = storedPlayer && JSON.parse(storedPlayer);
-    if (player && previousGame && isOffline)
-      navigation.navigate("Play", { game: previousGame, player });
-    else if (player) {
-      const data = { code: code.join(""), player };
-      const { response, error } = await Services.sendRequest(
-        JOIN_GAME_URL,
-        data,
-      );
-      if (response && response.ok) {
-        // saveGameToStorage(response.game)
-        navigation.navigate("Play", { game: response.game, player });
-      }
-      setError(error);
-    }
-    setModalVisible(!player);
-    setLoading(false);
+    handleGameEntry(
+      JOIN_GAME_URL,
+      { code: code.join("") },
+      isOffline,
+      previousGame,
+    );
   };
 
   return (
@@ -154,8 +140,8 @@ const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
         </TouchableOpacity>
       )}
       <CreateProfileModal
-        displayModal={modalVisible}
-        onClose={() => setModalVisible(false)}
+        displayModal={playerModal}
+        onClose={() => setPlayerModal(false)}
       />
       <FailedConnectionModal
         displayModal={!!error}

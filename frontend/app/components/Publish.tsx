@@ -18,7 +18,9 @@ import FailedConnectionModal from "./FailedConnectionModal";
 import Services from "../services";
 import { STORAGE_KEYS, PUBLISH_GAME_URL } from "../constants";
 import EditableGrid from "./EditableGrid";
-import { Player, RootStackParamList } from "../types";
+import { RootStackParamList } from "../types";
+import { reformatGame, saveGameToStorage } from "../utils/gameActions";
+import useGameEntry from "../utils/useGameEntry";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
@@ -33,20 +35,19 @@ interface PublishProps {
 }
 
 const Publish = ({ route }: PublishProps) => {
-  const navigation =
-    useNavigation<NavigationProp<RootStackParamList, "Play">>();
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
+  const [game, setGame] = useState(reformatGame(route.params.game, rows, cols));
   const [title, setTitle] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState<boolean | string>(false);
-  const [loading, setLoading] = useState(false);
-
-  const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
-    route.params.game.slice(rowIndex * cols, (rowIndex + 1) * rows),
-  );
-  const [game, setGame] = useState(reformattedInitialGame);
+  const {
+    loading,
+    playerModal,
+    setPlayerModal,
+    error,
+    setError,
+    handleGameEntry,
+  } = useGameEntry();
 
   const selectGridSize = (item: string) => {
     setRows(+item[0]);
@@ -63,24 +64,8 @@ const Publish = ({ route }: PublishProps) => {
   // 1. Unit test
   // 2. If it's not working it's not working, the errors should work
   const publishGame = async () => {
-    if (loading) return;
-    setLoading(true);
-    const storedPlayer = await getItemAsync(STORAGE_KEYS.player);
-    const player: Player | false = storedPlayer && JSON.parse(storedPlayer);
-    if (player) {
-      const values = game.slice(0, rows).map((row) => row.slice(0, cols));
-      const data = { title, values, player_id: player.id };
-      const { response, error } = await Services.sendRequest(
-        PUBLISH_GAME_URL,
-        data,
-      );
-      if (response && response.ok)
-        // saveGameToStorage(response.game)
-        navigation.navigate("Play", { game: response.game, player });
-      setError(error);
-    }
-    setModalVisible(!player);
-    setLoading(false);
+    const values = game.slice(0, rows).map((row) => row.slice(0, cols));
+    handleGameEntry(PUBLISH_GAME_URL, { title, values });
   };
 
   return (
@@ -124,8 +109,8 @@ const Publish = ({ route }: PublishProps) => {
         )}
       </TouchableOpacity>
       <CreateProfileModal
-        displayModal={modalVisible}
-        onClose={() => setModalVisible(false)}
+        displayModal={playerModal}
+        onClose={() => setPlayerModal(false)}
       />
       <FailedConnectionModal
         displayModal={!!error}

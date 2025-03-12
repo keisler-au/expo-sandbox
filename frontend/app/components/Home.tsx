@@ -41,7 +41,7 @@ const Home = () => {
           expandedGridset={expandedGridset.current}
         />
       ) : (
-        <JoinGameInput joinGameVisible={!expanded} />
+        <JoinGameInput />
       )}
       <CreatePlayerModal
         displayModal={playerModal}

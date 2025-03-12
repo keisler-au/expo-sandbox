@@ -1,4 +1,4 @@
-import { Player, Task as Square } from "./types";
+import { Player, Task as Square } from "../types";
 
 export const formatTime = (dateString: string) => {
   const date = new Date(dateString);

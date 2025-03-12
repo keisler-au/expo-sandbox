@@ -13,63 +13,17 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 // @ts-ignore
 import BottomSheet from "react-native-simple-bottom-sheet";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { getItemAsync, setItemAsync, deleteItemAsync } from "expo-secure-store";
 // @ts-ignore
 import { isEqual } from "lodash";
-import { STORAGE_KEYS, WEBSOCKET_UPDATES_URL } from "../constants";
-import { addDisplayTextDetails } from "../utils";
+import { WEBSOCKET_UPDATES_URL } from "../constants";
 import { Game, Player, Task as Square } from "../types";
-
-// TODO: TESTING
-// 1. Unit test
-// 2. Offline updates will not get pushed
-const saveToQueue = async (square: Square) => {
-  const storedData = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
-  const dataArray = storedData ? JSON.parse(storedData) : [];
-  dataArray.push(square);
-  setItemAsync(STORAGE_KEYS.offlineUpdatesQueue, JSON.stringify(dataArray));
-};
-
-// TODO: TESTING
-// 1. Unit test
-// 2. Offline updates will not get pushed
-const sendSavedQueue = async (sendJsonMessage: Function) => {
-  const offlineUpdates = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
-  if (offlineUpdates) {
-    JSON.parse(offlineUpdates).forEach((square: Square) =>
-      sendJsonMessage(square),
-    );
-    await deleteItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
-  }
-};
-
-const updateGame = (square: Square, playerId: number, game: Square[][]) => {
-  square = addDisplayTextDetails(square, playerId);
-  let updated = game.map((row) => [...row]);
-  updated[square.grid_row][square.grid_column] = square;
-  return updated;
-};
-
-const saveGameToStorage = async (game: Game) => {
-  setItemAsync(
-    STORAGE_KEYS.offlineGameState,
-    JSON.stringify({ ...game, tasks: game, lastSaved: Date.now() }),
-  );
-};
-
-// TODO: TESTING
-// 1. Unit test
-// 2. The earliest completed square will get overridden
-const verifyEarliestCompletedSquare = (
-  pushSquare: Square,
-  currentSquare: Square,
-) => {
-  if (pushSquare.game_id === currentSquare.game_id) {
-    const pushSquareIsEarlier =
-      new Date(pushSquare.last_updated) < new Date(currentSquare.last_updated);
-    return pushSquareIsEarlier ? pushSquare : currentSquare;
-  }
-};
+import {
+  saveGameToStorage,
+  saveToQueue,
+  sendSavedQueue,
+  updateGame,
+  verifyEarliestCompletedSquare,
+} from "../utils/gameActions";
 
 const webSocketConfig = {
   // TODO: TESTING
@@ -86,7 +40,7 @@ const webSocketConfig = {
   reconnectInterval: (attempt: number) =>
     Math.min(Math.pow(2, attempt) * 1000, 10000),
   onOpen: () => console.log("WebSocket connected"),
-  onClose: (event) =>
+  onClose: (event: any) =>
     console.log(`WebSocket closed: ${event.reason}, reconnecting...`),
 };
 
@@ -114,30 +68,26 @@ const Play = ({ route }: PlayProp) => {
     webSocketConfig,
   );
 
-  // Receiving
+  // Receive remote update
   // TODO: TESTING
   // 1. Unit test
   // 2. Earlier completed remote updates won't be applied
   useEffect(() => {
-    if (lastJsonMessage) {
-      const data = lastJsonMessage.data;
-      const square = data && data.task;
-      if (square && square.completed_by.id !== player.id) {
-        const currentSquare = game[square.grid_row][square.grid_column];
-        const earliestSquare = verifyEarliestCompletedSquare(
-          square,
-          currentSquare,
-        );
-        if (isEqual(square, earliestSquare)) {
-          const updatedGame = updateGame(square, player.id, game);
-          setGame(updatedGame);
-          saveGameToStorage({ ...route.params.game, tasks: updatedGame });
-        }
+    const recievedSquare = lastJsonMessage?.data?.task;
+    if (recievedSquare && recievedSquare.completed_by.id !== player.id) {
+      const earliestSquare = verifyEarliestCompletedSquare(
+        recievedSquare,
+        game[recievedSquare.grid_row][recievedSquare.grid_column],
+      );
+      if (isEqual(recievedSquare, earliestSquare)) {
+        const updatedGame = updateGame(recievedSquare, player.id, game);
+        setGame(updatedGame);
+        saveGameToStorage({ ...route.params.game, tasks: updatedGame });
       }
     }
-  }, [lastJsonMessage, game, player.id]);
+  }, [lastJsonMessage, game, player.id, route.params.game]);
 
-  // Sending - or saving locally completed squares for future sending
+  // Send or Queue local update
   // TODO: TESTING
   // 1. Unit test
   // 2. Offline updates not saved OR sent, Online updates not sent, Offline game not saved
@@ -154,7 +104,7 @@ const Play = ({ route }: PlayProp) => {
     } else {
       sendSavedQueue(sendJsonMessage);
     }
-  }, [isOffline, completedSquare, sendJsonMessage]);
+  }, [isOffline, completedSquare, sendJsonMessage, game, route.params.game]);
 
   const shareContent = async () =>
     await Share.share({ message: route.params.game.code });

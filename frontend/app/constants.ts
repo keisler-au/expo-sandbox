@@ -8,7 +8,7 @@ const BASE_SOCKET =
 export const PUBLISH_GAME_URL = BASE_HTTP + "/game/publish_game/";
 export const JOIN_GAME_URL = BASE_HTTP + "/game/join_game/";
 export const CREATE_PLAYER_URL = BASE_HTTP + "/game/create_player/";
-export const WEBSOCKET_UPDATES_URL = BASE_SOCKET + "/ws/socket-server/";
+export const WEBSOCKET_UPDATES_URL = BASE_SOCKET + "/ws/socket-server";
 
 export const STORAGE_KEYS = Object.fromEntries(
   ["player", "offlineUpdatesQueue", "offlineGameState"].map((key) => [

@@ -43,7 +43,7 @@ const CreatePlayerModal = ({ displayModal, onClose }: CreatePlayerProps) => {
       CREATE_PLAYER_URL,
       name,
     );
-    if (response && response.ok) {
+    if (response && response?.ok) {
       setName(response.player.name);
       setItemAsync(STORAGE_KEYS.player, JSON.stringify(response.player));
     }
