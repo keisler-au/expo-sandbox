@@ -1,7 +1,22 @@
-import React, { useState } from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  NativeSyntheticEvent,
+} from "react-native";
 
-const FailedConnectionModal = ({ displayModal, message, onClose }) => {
+interface FailedConnectionProps {
+  displayModal: boolean;
+  message: string | boolean;
+  onClose: (event: NativeSyntheticEvent<any>) => void;
+}
+const FailedConnectionModal = ({
+  displayModal,
+  message,
+  onClose,
+}: FailedConnectionProps) => {
   return (
     <Modal
       transparent={true}

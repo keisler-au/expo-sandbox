@@ -1,6 +1,12 @@
 import { StyleSheet, TextInput, View } from "react-native";
 
-const EditableGrid = ({ game, rows, cols, onChange }) => (
+interface EditableGridProps {
+  game: string[][];
+  rows: number;
+  cols: number;
+  onChange: Function;
+}
+const EditableGrid = ({ game, rows, cols, onChange }: EditableGridProps) => (
   <View
     style={[styles.gridContainer, { bottom: rows === cols ? "35%" : "39%" }]}
   >

@@ -8,7 +8,7 @@ import {
   Text,
 } from "react-native";
 import { getItemAsync } from "expo-secure-store";
-import { useNavigation } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import IconHeader from "./IconHeader";
@@ -18,19 +18,29 @@ import FailedConnectionModal from "./FailedConnectionModal";
 import Services from "../services";
 import { STORAGE_KEYS, PUBLISH_GAME_URL } from "../constants";
 import EditableGrid from "./EditableGrid";
+import { Player, RootStackParamList } from "../types";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
 const GRID_OPTIONS = ["5x5", "4x5", "4x4", "3x4", "3x3"];
 
-const Publish = ({ route }) => {
-  const navigation = useNavigation<any>();
+interface PublishProps {
+  route: {
+    params: {
+      game: string[];
+    };
+  };
+}
+
+const Publish = ({ route }: PublishProps) => {
+  const navigation =
+    useNavigation<NavigationProp<RootStackParamList, "Play">>();
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
   const [title, setTitle] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<boolean | string>(false);
   const [loading, setLoading] = useState(false);
 
   const reformattedInitialGame = Array.from({ length: rows }, (_, rowIndex) =>
@@ -38,12 +48,12 @@ const Publish = ({ route }) => {
   );
   const [game, setGame] = useState(reformattedInitialGame);
 
-  const selectGridSize = (item) => {
-    setRows(item[0]);
-    setCols(item.slice(-1));
+  const selectGridSize = (item: string) => {
+    setRows(+item[0]);
+    setCols(+item.slice(-1));
     setSelectedGridSize(item);
   };
-  const changeGridText = (input, row, col) => {
+  const changeGridText = (input: string, row: number, col: number) => {
     let editedGame = [...game];
     editedGame[row][col] = input;
     setGame(editedGame);
@@ -55,7 +65,8 @@ const Publish = ({ route }) => {
   const publishGame = async () => {
     if (loading) return;
     setLoading(true);
-    const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
+    const storedPlayer = await getItemAsync(STORAGE_KEYS.player);
+    const player: Player | false = storedPlayer && JSON.parse(storedPlayer);
     if (player) {
       const values = game.slice(0, rows).map((row) => row.slice(0, cols));
       const data = { title, values, player_id: player.id };
@@ -73,7 +84,7 @@ const Publish = ({ route }) => {
 
   return (
     <View style={styles.screenContainer}>
-      <IconHeader type={["home-outline"]} paths={["Home"]} />
+      <IconHeader icons={[{ type: "home-outline", path: "Home" }]} />
       {/* EditTitle */}
       <View style={styles.editTitleContainer}>
         <TextInput

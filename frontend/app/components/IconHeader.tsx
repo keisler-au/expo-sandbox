@@ -3,18 +3,28 @@ import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const IconHeader = ({ type, paths, onPress = undefined }) => {
-  const navigation = useNavigation();
+interface IconHeaderProps {
+  icons: {
+    type: string;
+    path: string;
+  }[];
+  onPress?: Function;
+}
+const IconHeader = ({ icons, onPress }: IconHeaderProps) => {
+  const navigation = useNavigation<any>();
   return (
     <View style={styles.navBar}>
-      <TouchableOpacity onPress={() => navigation.navigate(paths[0])}>
-        <Ionicons name={type[0]} size={30} />
-      </TouchableOpacity>
-      {type[1] && (
-        <TouchableOpacity onPress={onPress}>
-          <Ionicons name={type[1]} size={30} />
+      {icons.map((icon) => (
+        <TouchableOpacity
+          onPress={() =>
+            typeof onPress === "function"
+              ? onPress()
+              : navigation.navigate(icon.path)
+          }
+        >
+          <Ionicons name={icon.type} size={30} />
         </TouchableOpacity>
-      )}
+      ))}
     </View>
   );
 };

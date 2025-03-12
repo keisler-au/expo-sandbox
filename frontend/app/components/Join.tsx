@@ -9,44 +9,47 @@ import {
   Keyboard,
   TouchableOpacity,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useNetInfo } from "@react-native-community/netinfo";
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from "./FailedConnectionModal";
-import { deleteItemAsync, getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "expo-secure-store";
 import { JOIN_GAME_URL, STORAGE_KEYS } from "../constants";
 import Services from "../services";
+import { Game, RootStackParamList } from "../types";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
-const JoinGameInput = ({ joinGameVisible }) => {
-  const navigation = useNavigation();
+const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
+  const navigation =
+    useNavigation<NavigationProp<RootStackParamList, "Play">>();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
-  const [previousGame, setPreviousGame] = useState(false);
+  const [previousGame, setPreviousGame] = useState<Game | false>(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | boolean>(false);
   const [loading, setLoading] = useState(false);
-  const inputs = useRef([]);
-
+  const inputs = useRef<(TextInput | null)[]>([]);
+  const netInfo = useNetInfo();
+  const isOffline = !netInfo.isConnected;
+  console.log(code);
   useEffect(() => {
+    console.log("hitting ?");
     const enterPreviousGameCode = async () => {
       // TODO: TESTING
-      const loadPreviousGame = JSON.parse(
-        await getItemAsync(STORAGE_KEYS.offlineGameState),
-      );
-      if (loadPreviousGame && joinGameVisible) {
-        const currentTime = new Date();
-        const lastUpdatedTime = new Date(previousGame.lastUpdated);
+      const storedGame = await getItemAsync(STORAGE_KEYS.offlineGameState);
+      const loadedGame: Game | false = storedGame && JSON.parse(storedGame);
+      if (loadedGame && loadedGame.lastSaved && joinGameVisible) {
         const threeHours = 3 * (60 * 60 * 1000);
-        console.log("");
-        if (currentTime - lastUpdatedTime < threeHours) {
-          setCode(previousGame.code.split(""));
+        if (
+          new Date().getTime() - new Date(loadedGame.lastSaved).getTime() <
+          threeHours
+        ) {
+          setCode(loadedGame.code.split(""));
           setSubmit(true);
-          await deleteItemAsync(STORAGE_KEYS.offlineGameState);
         }
-        setPreviousGame(loadPreviousGame);
+        setPreviousGame(loadedGame);
       }
     };
     enterPreviousGameCode();
@@ -85,8 +88,9 @@ const JoinGameInput = ({ joinGameVisible }) => {
   const connectToGame = async () => {
     if (loading) return;
     setLoading(true);
-    const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
-    if (player && isOffline)
+    const storedPlayer = await getItemAsync(STORAGE_KEYS.player);
+    const player = storedPlayer && JSON.parse(storedPlayer);
+    if (player && previousGame && isOffline)
       navigation.navigate("Play", { game: previousGame, player });
     else if (player) {
       const data = { code: code.join(""), player };
@@ -103,7 +107,10 @@ const JoinGameInput = ({ joinGameVisible }) => {
   };
 
   return (
-    <Pressable style={containerStyles(active)} onPress={handleCollapse}>
+    <Pressable
+      style={containerStyles(active).container}
+      onPress={handleCollapse}
+    >
       <Text style={styles.label}>Join</Text>
       <View style={styles.inputContainer}>
         {code.map((digit, index) => (
@@ -160,15 +167,17 @@ const JoinGameInput = ({ joinGameVisible }) => {
 
 const containerStyles = (active = false) =>
   StyleSheet.create({
-    paddingTop: active ? 165 : 0,
-    position: active ? "absolute" : "relative",
-    top: active ? 50 : 120,
-    bottom: 0,
-    right: 0,
-    left: 0,
-    alignItems: "center",
-    zIndex: 100,
-    backgroundColor: "#F0F0F0",
+    container: {
+      paddingTop: active ? 165 : 0,
+      position: active ? "absolute" : "relative",
+      top: active ? 50 : 120,
+      bottom: 0,
+      right: 0,
+      left: 0,
+      alignItems: "center",
+      zIndex: 100,
+      backgroundColor: "#F0F0F0",
+    },
   });
 
 const styles = StyleSheet.create({

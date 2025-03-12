@@ -7,44 +7,54 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+
+import { RootStackParamList } from "../types";
 
 const { width } = Dimensions.get("window");
 const GRID_SIZE = width / 1.35;
 
-const VerticalReel = ({ collapseReel, expandedGridset }) => {
-  const navigation = useNavigation();
+interface VerticalReelProps {
+  collapseReel: (gridset: string) => void;
+  expandedGridset?: string[][];
+}
+const VerticalReel = ({ collapseReel, expandedGridset }: VerticalReelProps) => {
+  const navigation =
+    useNavigation<NavigationProp<RootStackParamList, "Publish">>();
 
-  const handleNavigation = (gameIndex) =>
-    navigation.navigate("Publish", {
-      game: expandedGridset.current[gameIndex],
-    });
+  const handleNavigation = (gameIndex: number) =>
+    expandedGridset &&
+    navigation.navigate("Publish", { game: expandedGridset[gameIndex] });
 
   return (
+    // @ts-ignore
     <Pressable style={styles.pressableScreen} onPress={collapseReel}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View
           style={[
             styles.verticalContainer,
-            { minHeight: expandedGridset.current.length * GRID_SIZE },
+            {
+              minHeight: expandedGridset && expandedGridset.length * GRID_SIZE,
+            },
           ]}
         >
-          {expandedGridset.current.map((grid, gridIndex) => {
-            return (
-              <TouchableOpacity
-                key={gridIndex}
-                activeOpacity={1}
-                style={[styles.gridContainer, { flexWrap: "wrap" }]}
-                onPress={() => handleNavigation(gridIndex)}
-              >
-                {grid.map((square, squareIndex) => (
-                  <View key={squareIndex} style={[styles.square]}>
-                    <Text>{square}</Text>
-                  </View>
-                ))}
-              </TouchableOpacity>
-            );
-          })}
+          {expandedGridset &&
+            expandedGridset.map((grid, gridIndex) => {
+              return (
+                <TouchableOpacity
+                  key={gridIndex}
+                  activeOpacity={1}
+                  style={[styles.gridContainer, { flexWrap: "wrap" }]}
+                  onPress={() => handleNavigation(gridIndex)}
+                >
+                  {grid.map((square, squareIndex) => (
+                    <View key={squareIndex} style={[styles.square]}>
+                      <Text>{square}</Text>
+                    </View>
+                  ))}
+                </TouchableOpacity>
+              );
+            })}
         </View>
       </ScrollView>
     </Pressable>

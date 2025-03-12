@@ -10,23 +10,25 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
+  NativeSyntheticEvent,
 } from "react-native";
 import Services from "../services";
 import { CREATE_PLAYER_URL, STORAGE_KEYS } from "../constants";
 import FailedConnectionModal from "./FailedConnectionModal";
 
-const CreatePlayerModal = ({ displayModal, onClose }) => {
-  const [name, setName] = useState();
-  const [error, setError] = useState();
+interface CreatePlayerProps {
+  displayModal: boolean;
+  onClose: (event?: NativeSyntheticEvent<any>) => void;
+}
+const CreatePlayerModal = ({ displayModal, onClose }: CreatePlayerProps) => {
+  const [name, setName] = useState<string>("");
+  const [error, setError] = useState<string | boolean>(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getName = async () => {
-      // TODO: TESTING
-      // 1.
-      // 2.
-      const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
-      player && setName(player.name);
+      const storedPlayer = await getItemAsync(STORAGE_KEYS.player);
+      storedPlayer && setName(JSON.parse(storedPlayer).name);
     };
     name === undefined && getName();
   }, [displayModal, name]);

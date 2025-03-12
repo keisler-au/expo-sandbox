@@ -1,3 +1,5 @@
+import { FixtureGames } from "./types";
+
 const bingoGames2 = [
   [
     [
@@ -876,7 +878,7 @@ const bingoGames2 = [
   ],
 ];
 
-const bingoGames = {
+const bingoGames: FixtureGames = {
   Social: bingoGames2[0],
   Fitness: bingoGames2[1],
   "Ice Breakers": bingoGames2[2],

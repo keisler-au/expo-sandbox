@@ -9,6 +9,7 @@ import {
 import Animated, {
   Extrapolation,
   interpolate,
+  SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
 
@@ -16,7 +17,18 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.5;
 const BOX_NUM = 3;
 
-const CarouselItem = ({ item, index, scrollX, isVerticalReel }) => {
+interface CarouselItemProps {
+  item: string;
+  index: number;
+  scrollX: SharedValue<number>;
+  isVerticalReel: Function;
+}
+const CarouselItem = ({
+  item,
+  index,
+  scrollX,
+  isVerticalReel,
+}: CarouselItemProps) => {
   const rnAnimatedStyle = useAnimatedStyle(() => {
     const getInput = (i: number) => i * CARD_WIDTH - (width - CARD_WIDTH) / 2;
     const inputRange = [

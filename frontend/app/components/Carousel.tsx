@@ -12,10 +12,9 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.5;
 const GAME_SETS = Array(50).fill(Object.keys(bingoGames)).flat();
 
-const Carousel = ({ isVerticalReel }) => {
+const Carousel = ({ isVerticalReel }: { isVerticalReel: Function }) => {
   const scrollX = useSharedValue(0);
   const flatListRef = useRef(null);
-  const [renderCarousel, setRenderCarousel] = useState(false);
 
   const onScrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -23,7 +22,7 @@ const Carousel = ({ isVerticalReel }) => {
     },
   });
 
-  const renderItem = ({ item, index }) => (
+  const renderItem = ({ item, index }: { item: string; index: number }) => (
     <CarouselItem
       item={item}
       index={index}

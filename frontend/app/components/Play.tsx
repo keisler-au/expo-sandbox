@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -6,63 +6,25 @@ import {
   StyleSheet,
   TouchableOpacity,
   Share,
+  Task,
 } from "react-native";
 import useWebSocket from "react-use-websocket";
-// import {shareAsync} from 'expo-sharing';
 import IconHeader from "./IconHeader";
 import { Feather, Ionicons } from "@expo/vector-icons";
+// @ts-ignore
 import BottomSheet from "react-native-simple-bottom-sheet";
-import NetInfo, { refresh } from "@react-native-community/netinfo";
+import { useNetInfo } from "@react-native-community/netinfo";
 import { getItemAsync, setItemAsync, deleteItemAsync } from "expo-secure-store";
-
+// @ts-ignore
 import { isEqual } from "lodash";
 import { STORAGE_KEYS, RECIEVE_GAME_UPDATES_URL } from "../constants";
-
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-};
-
-// TODO: TESTING
-// 1. Unit test
-// 2. Display break
-const addDisplayTextDetails = (square, playrId) => {
-  const completedDisplays = ["value", "completed_by", "last_updated"];
-  // Scenarios where local displayText is first set:
-  // 1. Task was locally completed, displayText set upon completion, first touch moves index along
-  // 2. Task was remotely completed, displayText is not set on completion, first touch sets it
-  //This means on first touch remotely completed squares need to skip an index in order to keep up
-  const taskWasIncomplete =
-    square.displayTextIndex == null && square.completed_by.id === playrId;
-  const remotePlayerCompleted = square.displayTextIndex == null;
-  const incompleteStartingIndex = 2;
-  const remoteCompletionStartingIndex = 0;
-  const currentDisplayIndex = taskWasIncomplete
-    ? incompleteStartingIndex
-    : remotePlayerCompleted
-      ? remoteCompletionStartingIndex
-      : square.displayTextIndex;
-  const displayTextIndex = (currentDisplayIndex + 1) % completedDisplays.length;
-  let displayText = square[completedDisplays[displayTextIndex]];
-  switch (displayTextIndex) {
-    case 2:
-      displayText = formatTime(displayText);
-      break;
-    case 1:
-      displayText = displayText.name;
-      break;
-  }
-  return { ...square, displayText, displayTextIndex };
-};
+import { addDisplayTextDetails } from "../utils";
+import { Game, Player, Task as Square } from "../types";
 
 // TODO: TESTING
 // 1. Unit test
 // 2. Offline updates will not get pushed
-const saveToQueue = async (square) => {
+const saveToQueue = async (square: Square) => {
   const storedData = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
   const dataArray = storedData ? JSON.parse(storedData) : [];
   dataArray.push(square);
@@ -72,13 +34,12 @@ const saveToQueue = async (square) => {
 // TODO: TESTING
 // 1. Unit test
 // 2. Offline updates will not get pushed
-const sendSavedQueue = async (sendJsonMessage) => {
-  const offlineUpdatesQueue = await getItemAsync(
-    STORAGE_KEYS.offlineUpdatesQueue,
-  );
-  if (offlineUpdatesQueue) {
-    const queue = JSON.parse(offlineUpdatesQueue);
-    queue.forEach((square) => sendJsonMessage(square));
+const sendSavedQueue = async (sendJsonMessage: Function) => {
+  const offlineUpdates = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
+  if (offlineUpdates) {
+    JSON.parse(offlineUpdates).forEach((square: Square) =>
+      sendJsonMessage(square),
+    );
     await deleteItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
   }
 };
@@ -86,7 +47,10 @@ const sendSavedQueue = async (sendJsonMessage) => {
 // TODO: TESTING
 // 1. Unit test
 // 2. The earliest completed square will get overridden
-const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
+const verifyEarliestCompletedSquare = (
+  pushSquare: Square,
+  currentSquare: Square,
+) => {
   if (pushSquare.game_id === currentSquare.game_id) {
     const pushSquareIsEarlier =
       new Date(pushSquare.last_updated) < new Date(currentSquare.last_updated);
@@ -94,19 +58,30 @@ const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
   }
 };
 
-const Play = ({ route }) => {
+interface PlayProp {
+  route: {
+    params: {
+      game: Game;
+      player: Player;
+    };
+  };
+}
+
+const Play = ({ route }: PlayProp) => {
   const [game, setGame] = useState(route.params.game.tasks);
   const [saveGame, setSaveGame] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
-  const [focusedSquare, setFocusedSquare] = useState({});
-  const [sendCompletedSquare, setSendCompletedSquare] = useState(null);
-  const [isOffline, setIsOffline] = useState(null);
+  const [modalTask, setModalTask] = useState<Square | null>(null);
+  const [completedSquare, setCompletedSquare] = useState<Square | null>(null);
   const player = route.params.player;
   const rows = game.length;
   const cols = game[0].length;
+  const netInfo = useNetInfo();
+  const isOffline = !netInfo.isConnected;
 
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } =
-    useWebSocket(`${RECIEVE_GAME_UPDATES_URL}/${game.id}/`, {
+  const { sendJsonMessage, lastJsonMessage } = useWebSocket<{ data: any }>(
+    `${RECIEVE_GAME_UPDATES_URL}/${route.params.game.id}/`,
+    {
       // TODO: TESTING
       // 1. Unit test
       // 2. Increases risk that local updates will permanently fail to send
@@ -128,33 +103,35 @@ const Play = ({ route }) => {
           `WebSocket closed: ${event.reason}, attempting to reconnect...`,
         );
       },
-    });
+    },
+  );
+
+  const refreshGameWithCompletedSquare = useCallback(
+    (square: Square) => {
+      square = addDisplayTextDetails(square, player.id);
+      setGame((prevGame) =>
+        prevGame.map((row) =>
+          row.map((prevSquare) =>
+            prevSquare.id === square.id ? square : prevSquare,
+          ),
+        ),
+      );
+      setSaveGame(true);
+    },
+    [player.id],
+  );
 
   // Save game - to local storage on first entry, then on subsequent calls (saveGame state change)
   useEffect(() => {
     const saveGameToStorage = async () => {
       let offlineGame = { ...route.params.game };
       offlineGame.tasks = game;
-      offlineGame.lastUpdated = Date.now();
-      // TODO: TESTING
+      offlineGame.lastSaved = Date.now();
       setItemAsync(STORAGE_KEYS.offlineGameState, JSON.stringify(offlineGame));
       setSaveGame(false);
     };
     saveGame && route.params.game && saveGameToStorage();
-  }, [saveGame]);
-
-  // Offline status checker
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      // TODO: TESTING
-      // 1. Unit test
-      // 2. Local updates and gamestate will not be saved
-      // Won't be able to rejoin game offline
-      // Local updates won't be saved to queue
-      setIsOffline(!state.isConnected);
-    });
-    return () => unsubscribe();
-  }, []);
+  }, [saveGame, route.params.game, game]);
 
   // Receiving
   // TODO: TESTING
@@ -175,7 +152,7 @@ const Play = ({ route }) => {
         }
       }
     }
-  }, [lastJsonMessage]);
+  }, [lastJsonMessage, game, player.id, refreshGameWithCompletedSquare]);
 
   // Sending - or saving locally completed squares for future sending
   // TODO: TESTING
@@ -183,30 +160,18 @@ const Play = ({ route }) => {
   // 2. Offline updates not saved OR sent, Online updates not sent, Offline game not saved
   useEffect(() => {
     if (isOffline === null) return;
-    if (isOffline && sendCompletedSquare) {
-      saveToQueue(sendCompletedSquare);
-      setSendCompletedSquare(null);
-    } else if (sendCompletedSquare) {
-      sendJsonMessage(sendCompletedSquare);
-      setSendCompletedSquare(null);
+    if (isOffline && completedSquare) {
+      saveToQueue(completedSquare);
+      setCompletedSquare(null);
+    } else if (completedSquare) {
+      sendJsonMessage(completedSquare);
+      setCompletedSquare(null);
     } else if (isOffline) {
       setSaveGame(true);
     } else {
       sendSavedQueue(sendJsonMessage);
     }
-  }, [isOffline, sendCompletedSquare]);
-
-  const refreshGameWithCompletedSquare = (square) => {
-    square = addDisplayTextDetails(square, player.id);
-    setGame((prevGame) =>
-      prevGame.map((row) =>
-        row.map((prevSquare) =>
-          prevSquare.id === square.id ? square : prevSquare,
-        ),
-      ),
-    );
-    setSaveGame(true);
-  };
+  }, [isOffline, completedSquare, sendJsonMessage]);
 
   const shareContent = async () =>
     await Share.share({ message: route.params.game.code });
@@ -214,26 +179,26 @@ const Play = ({ route }) => {
   // TODO: TESTING
   // 1. Unit test
   // 2. Local task update won't be sent or saved
-  const taskCompleted = async (square) => {
+  const taskCompleted = async (square: Square) => {
     const currentSquare = game[square.grid_row][square.grid_column];
     const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
     if (isEqual(square, earliestSquare)) {
       square = { ...square, completed: true, completed_by: player };
       refreshGameWithCompletedSquare(square);
-      setSendCompletedSquare(square);
+      setCompletedSquare(square);
     }
     setModalVisible(false);
   };
 
-  const taskDisplayChange = (square) => {
-    square.completed && refreshGameWithCompletedSquare(square, player.id);
-    setFocusedSquare(square);
+  const taskDisplayChange = (square: Square) => {
+    square.completed && refreshGameWithCompletedSquare(square);
+    setModalTask(square);
     setModalVisible(!square.completed);
   };
 
   return (
     <View style={styles.screenContainer}>
-      <IconHeader type={["home-outline"]} paths={["Home"]} />
+      <IconHeader icons={[{ type: "home-outline", path: "Home" }]} />
       <Text style={styles.gameCode}>Game Code</Text>
       <View style={styles.shareContainer}>
         <Text style={styles.code}>{route.params.game.code}</Text>
@@ -284,15 +249,15 @@ const Play = ({ route }) => {
                         </TouchableOpacity>
                         <View style={styles.modalDescriptionTextContainer}>
                           <Text style={styles.modalDescriptionText}>
-                            {focusedSquare?.value}
+                            {modalTask?.value}
                           </Text>
                         </View>
                         <TouchableOpacity
                           style={styles.modalCompletedContainer}
-                          onPress={() => taskCompleted(focusedSquare)}
+                          onPress={() => modalTask && taskCompleted(modalTask)}
                         >
                           <Text style={styles.modalCompletedText}>
-                            Completed{" "}
+                            Completed
                           </Text>
                           <Feather
                             name="check-square"
