@@ -35,3 +35,5 @@ export interface Task {
 export interface FixtureGames {
   [key: string]: string[][];
 }
+
+export default {};

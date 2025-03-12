@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -16,7 +16,7 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import { getItemAsync, setItemAsync, deleteItemAsync } from "expo-secure-store";
 // @ts-ignore
 import { isEqual } from "lodash";
-import { STORAGE_KEYS, RECIEVE_GAME_UPDATES_URL } from "../constants";
+import { STORAGE_KEYS, WEBSOCKET_UPDATES_URL } from "../constants";
 import { addDisplayTextDetails } from "../utils";
 import { Game, Player, Task as Square } from "../types";
 
@@ -50,6 +50,13 @@ const updateGame = (square: Square, playerId: number, game: Square[][]) => {
   return updated;
 };
 
+const saveGameToStorage = async (game: Game) => {
+  setItemAsync(
+    STORAGE_KEYS.offlineGameState,
+    JSON.stringify({ ...game, tasks: game, lastSaved: Date.now() }),
+  );
+};
+
 // TODO: TESTING
 // 1. Unit test
 // 2. The earliest completed square will get overridden
@@ -64,6 +71,25 @@ const verifyEarliestCompletedSquare = (
   }
 };
 
+const webSocketConfig = {
+  // TODO: TESTING
+  // 1. Unit test
+  // 2. Increases risk that local updates will permanently fail to send
+  heartbeat: {
+    message: "heartbeat",
+    returnMessage: "thump",
+    timeout: 60000, // 1 minute, if no response received, the connection is closed
+    interval: 25000, // every 25 seconds a ping message will be sent
+  },
+  reconnectAttempts: 15,
+  shouldReconnect: () => true,
+  reconnectInterval: (attempt: number) =>
+    Math.min(Math.pow(2, attempt) * 1000, 10000),
+  onOpen: () => console.log("WebSocket connected"),
+  onClose: (event) =>
+    console.log(`WebSocket closed: ${event.reason}, reconnecting...`),
+};
+
 interface PlayProp {
   route: {
     params: {
@@ -74,7 +100,6 @@ interface PlayProp {
 }
 const Play = ({ route }: PlayProp) => {
   const [game, setGame] = useState(route.params.game.tasks);
-  const [saveGame, setSaveGame] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTask, setModalTask] = useState<Square | null>(null);
   const [completedSquare, setCompletedSquare] = useState<Square | null>(null);
@@ -85,47 +110,9 @@ const Play = ({ route }: PlayProp) => {
   const isOffline = !netInfo.isConnected;
 
   const { sendJsonMessage, lastJsonMessage } = useWebSocket<{ data: any }>(
-    `${RECIEVE_GAME_UPDATES_URL}/${route.params.game.id}/`,
-    {
-      // TODO: TESTING
-      // 1. Unit test
-      // 2. Increases risk that local updates will permanently fail to send
-      heartbeat: {
-        message: "heartbeat",
-        returnMessage: "thump",
-        timeout: 60000, // 1 minute, if no response received, the connection is closed
-        interval: 25000, // every 25 seconds a ping message will be sent
-      },
-      reconnectAttempts: 15,
-      shouldReconnect: (closeEvent) => true,
-      reconnectInterval: (attemptNumber) =>
-        Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
-      onOpen: () => {
-        console.log("WebSocket connected");
-      },
-      onClose: (event) => {
-        console.log(
-          `WebSocket closed: ${event.reason}, attempting to reconnect...`,
-        );
-      },
-    },
+    `${WEBSOCKET_UPDATES_URL}/${route.params.game.id}/`,
+    webSocketConfig,
   );
-
-  // Save game - to local storage on first entry, then on subsequent calls (saveGame state change)
-  useEffect(() => {
-    const saveGameToStorage = async () => {
-      setItemAsync(
-        STORAGE_KEYS.offlineGameState,
-        JSON.stringify({
-          ...route.params.game,
-          tasks: game,
-          lastSaved: Date.now(),
-        }),
-      );
-      setSaveGame(false);
-    };
-    saveGame && route.params.game && saveGameToStorage();
-  }, [saveGame, route.params.game, game]);
 
   // Receiving
   // TODO: TESTING
@@ -142,8 +129,9 @@ const Play = ({ route }: PlayProp) => {
           currentSquare,
         );
         if (isEqual(square, earliestSquare)) {
-          setGame(updateGame(square, player.id, game));
-          setSaveGame(true);
+          const updatedGame = updateGame(square, player.id, game);
+          setGame(updatedGame);
+          saveGameToStorage({ ...route.params.game, tasks: updatedGame });
         }
       }
     }
@@ -162,7 +150,7 @@ const Play = ({ route }: PlayProp) => {
       sendJsonMessage(completedSquare);
       setCompletedSquare(null);
     } else if (isOffline) {
-      setSaveGame(true);
+      saveGameToStorage({ ...route.params.game, tasks: game });
     } else {
       sendSavedQueue(sendJsonMessage);
     }
@@ -179,8 +167,9 @@ const Play = ({ route }: PlayProp) => {
     const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
     if (isEqual(square, earliestSquare)) {
       square = { ...square, completed: true, completed_by: player };
-      setGame(updateGame(square, player.id, game));
-      setSaveGame(true);
+      const updatedGame = updateGame(square, player.id, game);
+      setGame(updatedGame);
+      saveGameToStorage({ ...route.params.game, tasks: updatedGame });
       setCompletedSquare(square);
     }
     setModalVisible(false);

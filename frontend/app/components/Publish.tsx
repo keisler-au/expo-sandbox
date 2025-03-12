@@ -75,6 +75,7 @@ const Publish = ({ route }: PublishProps) => {
         data,
       );
       if (response && response.ok)
+        // saveGameToStorage(response.game)
         navigation.navigate("Play", { game: response.game, player });
       setError(error);
     }

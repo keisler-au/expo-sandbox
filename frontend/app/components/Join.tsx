@@ -97,8 +97,10 @@ const JoinGameInput = ({ joinGameVisible }: { joinGameVisible: boolean }) => {
         JOIN_GAME_URL,
         data,
       );
-      if (response && response.ok)
+      if (response && response.ok) {
+        // saveGameToStorage(response.game)
         navigation.navigate("Play", { game: response.game, player });
+      }
       setError(error);
     }
     setModalVisible(!player);
