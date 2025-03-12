@@ -1,15 +1,14 @@
-import React, { useState, useRef, memo } from 'react';
-import { StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useRef, memo } from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import Carousel from './Carousel';
-import CreatePlayerModal from './CreateProfileModal';
-import IconHeader from './IconHeader';
-import JoinGameInput from './Join';
-import VerticalReel from './VerticalReel';
+import Carousel from "./Carousel";
+import CreatePlayerModal from "./CreateProfileModal";
+import IconHeader from "./IconHeader";
+import JoinGameInput from "./Join";
+import VerticalReel from "./VerticalReel";
 
-import bingoGames from '../templateFixtures';
-
+import bingoGames from "../templateFixtures";
 
 const Home = memo(() => {
   const [expanded, setExpanded] = useState(false);
@@ -23,30 +22,33 @@ const Home = memo(() => {
 
   return (
     <SafeAreaView style={styles.background}>
-      <IconHeader 
-        type={["settings-outline", "person-circle-outline"]} 
+      <IconHeader
+        type={["settings-outline", "person-circle-outline"]}
         paths={["Settings", "Profile"]}
         onPress={() => setPlayerModal(true)}
       />
-      <Carousel isVerticalReel={isVerticalReel}/>
-      {expanded 
-        ? <VerticalReel 
-          collapseReel={isVerticalReel} 
+      <Carousel isVerticalReel={isVerticalReel} />
+      {expanded ? (
+        <VerticalReel
+          collapseReel={isVerticalReel}
           expandedGridset={expandedGridset}
-        /> 
-        : <JoinGameInput joinGameVisible={!expanded} />}
-      <CreatePlayerModal displayModal={playerModal} onClose={() => setPlayerModal(false)} />
+        />
+      ) : (
+        <JoinGameInput joinGameVisible={!expanded} />
+      )}
+      <CreatePlayerModal
+        displayModal={playerModal}
+        onClose={() => setPlayerModal(false)}
+      />
     </SafeAreaView>
-
   );
 });
 
 const styles = StyleSheet.create({
   background: {
-    height: '100%',
+    height: "100%",
     position: "relative",
   },
 });
-
 
 export default Home;
