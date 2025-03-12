@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   ActivityIndicator,
   View,
@@ -8,47 +8,51 @@ import {
   Pressable,
   Keyboard,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import CreateProfileModal from "./CreateProfileModal";
-import FailedConnectionModal from './FailedConnectionModal';
-import { getItemAsync } from 'expo-secure-store';
-import { JOIN_GAME_URL, STORAGE_KEYS } from '../constants';
-import Services from '../services';
+import FailedConnectionModal from "./FailedConnectionModal";
+import { deleteItemAsync, getItemAsync } from "expo-secure-store";
+import { JOIN_GAME_URL, STORAGE_KEYS } from "../constants";
+import Services from "../services";
 
+const MAIN_FONT_FAMILY = "Verdana";
 
-const MAIN_FONT_FAMILY = 'Verdana';
-
-const JoinGameInput = ({ joinGame }) => {
+const JoinGameInput = ({ joinGameVisible }) => {
   const navigation = useNavigation();
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [active, setActive] = useState(false);
   const [submit, setSubmit] = useState(false);
+  const [previousGame, setPreviousGame] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const inputs = useRef([]);
 
-
   useEffect(() => {
     const enterPreviousGameCode = async () => {
       // TODO: TESTING
-      const previousGame = JSON.parse(await getItemAsync(STORAGE_KEYS.offlineGameState));
-      if (previousGame && joinGame) {
+      const loadPreviousGame = JSON.parse(
+        await getItemAsync(STORAGE_KEYS.offlineGameState),
+      );
+      if (loadPreviousGame && joinGameVisible) {
         const currentTime = new Date();
         const lastUpdatedTime = new Date(previousGame.lastUpdated);
-        const threeHours = 3 * (60 * 60 * 1000)
-        if ((currentTime - lastUpdatedTime) < threeHours) {
+        const threeHours = 3 * (60 * 60 * 1000);
+        console.log("");
+        if (currentTime - lastUpdatedTime < threeHours) {
           setCode(previousGame.code.split(""));
           setSubmit(true);
+          await deleteItemAsync(STORAGE_KEYS.offlineGameState);
         }
+        setPreviousGame(loadPreviousGame);
       }
-    }
+    };
     enterPreviousGameCode();
-  }, [joinGame])
+  }, []);
 
-  // TODO: TESTING 
+  // TODO: TESTING
   const handleChange = (text: string, index: number) => {
     if (!/^[A-Z0-9]*$/.test(text)) return;
     if (text.length > 1 && text.length < 6) return;
@@ -59,13 +63,14 @@ const JoinGameInput = ({ joinGame }) => {
       nextFocus = 5;
       newCode = text.split("");
     }
-    inputs.current[nextFocus]?.focus()
+    inputs.current[nextFocus]?.focus();
     setCode(newCode);
-    if (newCode.join('').length === 6) setSubmit(true);
+    if (newCode.join("").length === 6) setSubmit(true);
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    const backSpaceCondition = e.nativeEvent.key === 'Backspace' && !code[index] && index > 0;
+    const backSpaceCondition =
+      e.nativeEvent.key === "Backspace" && !code[index] && index > 0;
     backSpaceCondition && inputs.current[index - 1]?.focus();
   };
 
@@ -73,35 +78,45 @@ const JoinGameInput = ({ joinGame }) => {
     setActive(false);
     Keyboard.dismiss();
   };
-
+  // TODO: if player is offline then use saved game
+  // TODO: TESTING
+  // 1. Unit test
+  // 2. If it fails it will clearly be isolate to this function
   const connectToGame = async () => {
-    // TODO: TESTING
     if (loading) return;
     setLoading(true);
-    // TODO: TESTING
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
-    if (player) {
-      const data = { code: code.join(""), player};
-      // TODO: TESTING
-      const { response, error } = await Services.sendRequest(JOIN_GAME_URL, data);
-      if (response && response.ok) {
-        navigation.navigate("Play", { game: response.game, player })
-      }
-      // TODO: TESTING
-      setError(error) 
+    if (player && isOffline)
+      navigation.navigate("Play", { game: previousGame, player });
+    else if (player) {
+      const data = { code: code.join(""), player };
+      const { response, error } = await Services.sendRequest(
+        JOIN_GAME_URL,
+        data,
+      );
+      if (response && response.ok)
+        navigation.navigate("Play", { game: response.game, player });
+      setError(error);
     }
-    // TODO: TESTING
     setModalVisible(!player);
     setLoading(false);
-  }
+  };
 
   return (
     <Pressable style={containerStyles(active)} onPress={handleCollapse}>
       <Text style={styles.label}>Join</Text>
       <View style={styles.inputContainer}>
         {code.map((digit, index) => (
-          <View key={`container-${index}`} style={{flexDirection:"row", gap: 11}}>
-             { index === 3 && <Text key={`dash-${index}`} style={styles.dash}> - </Text> }
+          <View
+            key={`container-${index}`}
+            style={{ flexDirection: "row", gap: 11 }}
+          >
+            {index === 3 && (
+              <Text key={`dash-${index}`} style={styles.dash}>
+                {" "}
+                -{" "}
+              </Text>
+            )}
             <TextInput
               key={`input-${index}`}
               ref={(el) => (inputs.current[index] = el)}
@@ -117,8 +132,7 @@ const JoinGameInput = ({ joinGame }) => {
           </View>
         ))}
       </View>
-      {
-        submit && 
+      {submit && (
         <TouchableOpacity
           onPress={connectToGame}
           activeOpacity={1}
@@ -130,9 +144,16 @@ const JoinGameInput = ({ joinGame }) => {
             <Text style={styles.buttonText}>Join Game</Text>
           )}
         </TouchableOpacity>
-      }
-      <CreateProfileModal displayModal={modalVisible} onClose={() => setModalVisible(false)} />
-      <FailedConnectionModal displayModal={!!error} message={error} onClose={() => setError(false)} />
+      )}
+      <CreateProfileModal
+        displayModal={modalVisible}
+        onClose={() => setModalVisible(false)}
+      />
+      <FailedConnectionModal
+        displayModal={!!error}
+        message={error}
+        onClose={() => setError(false)}
+      />
     </Pressable>
   );
 };
@@ -140,42 +161,41 @@ const JoinGameInput = ({ joinGame }) => {
 const containerStyles = (active = false) =>
   StyleSheet.create({
     paddingTop: active ? 165 : 0,
-    position: active ? 'absolute' : 'relative',
+    position: active ? "absolute" : "relative",
     top: active ? 50 : 120,
     bottom: 0,
     right: 0,
     left: 0,
-    alignItems: 'center',
+    alignItems: "center",
     zIndex: 100,
     backgroundColor: "#F0F0F0",
   });
 
 const styles = StyleSheet.create({
   label: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontFamily: MAIN_FONT_FAMILY,
     fontSize: 18,
     marginBottom: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   input: {
     width: 40,
     height: 50,
     borderWidth: 1,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 20,
     borderRadius: 5,
   },
   dash: {
     height: 1,
-    width: 6, 
+    width: 6,
     backgroundColor: "black",
-    alignSelf: 'center',
+    alignSelf: "center",
     opacity: 0.5,
-
   },
   button: {
     borderWidth: 1,

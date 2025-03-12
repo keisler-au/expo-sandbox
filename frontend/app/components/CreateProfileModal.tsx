@@ -14,26 +14,28 @@ const CreatePlayerModal = ({ displayModal, onClose }) => {
     useEffect(() => {
       const getName = async () => {
         // TODO: TESTING
+        // 1. 
+        // 2. 
         const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
         player && setName(player.name);
       }
       name === undefined && getName();
     }, [displayModal, name])
 
+    // TODO: TESTING
+    // 1. Unit test
+    // 2. They won't be able to enter the game and they won't know why
     const handleSubmit = async () => {
-      // TODO: TESTING
       if (loading) return;
       setLoading(true);
-      // TODO: TESTING
       const { response, error } = await Services.sendRequest(CREATE_PLAYER_URL, name);
       if (response && response.ok) {
         setName(response.player.name)
-        // TODO: TESTING
         setItemAsync(STORAGE_KEYS.player, JSON.stringify(response.player))
-        onClose()
       }
-      // TODO: TESTING
-      setError(error);
+      onClose()
+      // Allow Profile modal to close before opening Failed Connection modal
+      setTimeout(() => setError(error), 50);
       setLoading(false);
     };
 

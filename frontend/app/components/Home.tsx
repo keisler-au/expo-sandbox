@@ -34,7 +34,7 @@ const Home = memo(() => {
           collapseReel={isVerticalReel} 
           expandedGridset={expandedGridset}
         /> 
-        : <JoinGameInput joinGame={!expanded} />}
+        : <JoinGameInput joinGameVisible={!expanded} />}
       <CreatePlayerModal displayModal={playerModal} onClose={() => setPlayerModal(false)} />
     </SafeAreaView>
 

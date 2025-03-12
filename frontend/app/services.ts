@@ -3,6 +3,9 @@ import { STORAGE_KEYS } from "./constants";
 
 
 class Services {
+    static FAILED_CONNECTION = "We failed to connect to the server. Please try again.";
+    static NOT_FOUND = "The entry used did not connect, please check it is correct and try again.";
+
     static async sendRequest (url: string, data: any) {
         let response;
         let error: boolean | string = false;
@@ -15,17 +18,18 @@ class Services {
             });
         } catch (e) {
             console.log(e.toString())
-            error = "We failed to connect to the server and so were not able to enter the game. Please try again.";
+            error = this.FAILED_CONNECTION;
         }
 
         if (response?.ok) {
             response = await response.json();
             response.ok = true;
         } 
-        if (response?.ok === false && response.status === 404) {
-            error = "The game code used did not connect, please check it is correct and try again."
+        if (response?.ok === false) {
+            if (response.status === 404) error = this.NOT_FOUND
+            if (response.status == 400) error = this.FAILED_CONNECTION
         }
-
+        
         return { response, error, }
     }
 }

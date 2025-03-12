@@ -43,25 +43,21 @@ const Publish = ({ route }) => {
     editedGame[row][col] = input 
     setGame(editedGame)
   }
+
+  // TODO: TESTING
+  // 1. Unit test
+  // 2. If it's not working it's not working, the errors should work
   const publishGame = async () => {
     if (loading) return;
     setLoading(true);
-    // TODO: TESTING
     const player = JSON.parse(await getItemAsync(STORAGE_KEYS.player));
     if (player) {
-      const data = { 
-        title, values: game.slice(0, rows).map(row => row.slice(0,cols)), player_id: player.id 
-      };
-      // TODO: TESTING
+      const values = game.slice(0, rows).map(row => row.slice(0,cols));
+      const data = { title, values, player_id: player.id };
       const { response, error } = await Services.sendRequest(PUBLISH_GAME_URL, data)
-      if (response && response.ok) {
-        // TODO: TESTING
-        navigation.navigate("Play", { game: response.game, player })
-      }
-      // TODO: TESTING
+      if (response && response.ok) navigation.navigate("Play", { game: response.game, player })
       setError(error);
     }
-    // TODO: TESTING
     setModalVisible(!player);
     setLoading(false);
   }

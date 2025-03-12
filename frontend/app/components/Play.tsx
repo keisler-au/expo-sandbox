@@ -26,6 +26,8 @@ const formatTime = (dateString: string) => {
 }
 
 // TODO: TESTING
+// 1. Unit test
+// 2. Display break
 const addDisplayTextDetails= (square, playrId) => {
     const completedDisplays = ["value", "completed_by", "last_updated"]
     // Scenarios where local displayText is first set:
@@ -54,26 +56,31 @@ const addDisplayTextDetails= (square, playrId) => {
     return {...square, displayText, displayTextIndex}
 }
 
+// TODO: TESTING
+// 1. Unit test
+// 2. Offline updates will not get pushed
 const saveToQueue = async (square) => {
-    // TODO: TESTING
     const storedData = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     const dataArray = storedData ? JSON.parse(storedData) : [];
     dataArray.push(square);
     setItemAsync(STORAGE_KEYS.offlineUpdatesQueue, JSON.stringify(dataArray));
 }
 
+// TODO: TESTING
+// 1. Unit test
+// 2. Offline updates will not get pushed
 const sendSavedQueue = async (sendJsonMessage) => {
     const offlineUpdatesQueue = await getItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     if (offlineUpdatesQueue) {
         const queue = JSON.parse(offlineUpdatesQueue)
-        // TODO: TESTING
         queue.forEach(square => sendJsonMessage(square))
-        // TODO: TESTING
         await deleteItemAsync(STORAGE_KEYS.offlineUpdatesQueue);
     }
 }
 
 // TODO: TESTING
+// 1. Unit test
+// 2. The earliest completed square will get overridden
 const verifyEarliestCompletedSquare = (pushSquare, currentSquare) => {
     if (pushSquare.game_id === currentSquare.game_id) {
         const pushSquareIsEarlier = (
@@ -97,9 +104,33 @@ const Play = ({ route }) => {
     const rows = game.length;
     const cols = game[0].length;
 
-    // useEffect - to save game to local storage on first entry
+        const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(
+        `${RECIEVE_GAME_UPDATES_URL}/${game.id}/`, 
+        {
+            // TODO: TESTING
+            // 1. Unit test
+            // 2. Increases risk that local updates will permanently fail to send
+            heartbeat: {
+                message: 'heartbeat',
+                returnMessage: 'thump',
+                timeout: 60000, // 1 minute, if no response received, the connection is closed
+                interval: 25000, // every 25 seconds a ping message will be sent
+            },
+            reconnectAttempts: 15,
+            shouldReconnect: (closeEvent) => true,
+            reconnectInterval: (attemptNumber) =>
+                Math.min(Math.pow(2, attemptNumber) * 1000, 10000),
+            onOpen: () => {
+                console.log("WebSocket connected");
+            },
+            onClose: (event) => {
+                console.log(`WebSocket closed: ${event.reason}, attempting to reconnect...`);
+            },
+        }
+    );
+
+    // Save game - to local storage on first entry, then on subsequent calls (saveGame state change)
     useEffect(() => {
-        console.log("Save Game: how many times is this rendering?")
         const saveGameToStorage = async () => { 
             let offlineGame = {...route.params.game}
             offlineGame.tasks = game;
@@ -111,32 +142,23 @@ const Play = ({ route }) => {
         saveGame && route.params.game && saveGameToStorage();
     }, [saveGame])
 
-    // Online status checker
+    // Offline status checker
     useEffect(() => {
-        console.log("NetInfo: how many times is this rendering?")
         const unsubscribe = NetInfo.addEventListener(state => {
             // TODO: TESTING
+            // 1. Unit test
+            // 2. Local updates and gamestate will not be saved
+                // Won't be able to rejoin game offline
+                // Local updates won't be saved to queue
             setIsOffline(!state.isConnected);
         });
-
         return () => unsubscribe();
     }, []);
-    
-    const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(
-        `${RECIEVE_GAME_UPDATES_URL}/${game.id}/`, 
-        {
-            shouldReconnect: (closeEvent) => true,
-            reconnectAttempts: 15,
-            reconnectInterval: 1000,
-            onOpen: () => {
-                console.log("WebSocket connected");
-            },
-            onClose: (event) => {
-                console.log(`WebSocket closed: ${event.reason}, attempting to reconnect...`);
-            },
-        }
-    );
 
+    // Receiving 
+    // TODO: TESTING
+    // 1. Unit test
+    // 2. Earlier completed remote updates won't be applied
     useEffect(() => {
         if (lastJsonMessage) {
             const data = lastJsonMessage.data;
@@ -144,8 +166,6 @@ const Play = ({ route }) => {
             if (square && square.completed_by.id !== player.id) {
                 const currentSquare = game[square.grid_row][square.grid_column];
                 const earliestSquare = verifyEarliestCompletedSquare(square, currentSquare);
-                // TODO: TESTING
-                // if (JSON.stringify(square) === JSON.stringify(earliestSquare)) {
                 if (isEqual(square, earliestSquare)) {
                     refreshGameWithCompletedSquare(square);
                 }
@@ -153,42 +173,38 @@ const Play = ({ route }) => {
         }
     }, [lastJsonMessage]);
 
-    // Sending or Saving locally completed squares
+    // Sending - or saving locally completed squares for future sending
+    // TODO: TESTING
+    // 1. Unit test
+    // 2. Offline updates not saved OR sent, Online updates not sent, Offline game not saved
     useEffect(() => {
-        console.log("Sending: how many times is this rendering?")
         if (isOffline === null) return;
         if (isOffline && sendCompletedSquare) {
-            // TODO: TESTING
             saveToQueue(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (sendCompletedSquare) {
-            // TODO: TESTING
             sendJsonMessage(sendCompletedSquare);
             setSendCompletedSquare(null);
         } else if (isOffline) {
-            // TODO: TESTING
             setSaveGame(true);
         } else { 
-            //TODO: TESTING
             sendSavedQueue(sendJsonMessage);
         }
     }, [isOffline, sendCompletedSquare]); 
 
     const refreshGameWithCompletedSquare = (square) => {
-        // Change the display text of the square and save it into game state
-        square = addDisplayTextDetails(square)
-        setGame(prevGame => prevGame.map(row => row.map(prevSquare =>
-                    prevSquare.id === square.id 
-                    ? square
-                    : prevSquare
-                )
-            )
-        )
+        square = addDisplayTextDetails(square, player.id)
+        setGame(prevGame => prevGame.map(row => row.map(
+            prevSquare => prevSquare.id === square.id ? square : prevSquare
+        )))
         setSaveGame(true);
     }
 
     const shareContent = async () => await Share.share({message: route.params.game.code})
 
+    // TODO: TESTING
+    // 1. Unit test
+    // 2. Local task update won't be sent or saved
     const taskCompleted = async (square) => { 
         const currentSquare = game[square.grid_row][square.grid_column];
         const earliestSquare= verifyEarliestCompletedSquare(square, currentSquare);
