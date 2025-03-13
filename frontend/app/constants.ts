@@ -1,20 +1,19 @@
-const DYNAMIC_URL = "d54d";
-const SERVER = `${DYNAMIC_URL}-84-241-201-129.ngrok-free.app`;
-const BASE_HTTP =
-  process.env.NODE_ENV === "production" ? "" : "https://" + SERVER;
-const BASE_SOCKET =
-  process.env.NODE_ENV === "production" ? "" : "wss://" + SERVER;
+const SERVER =
+  process.env.NODE_ENV === "production"
+    ? ""
+    : "727b-89-205-130-170.ngrok-free.app";
 
-export const PUBLISH_GAME_URL = BASE_HTTP + "/game/publish_game/";
-export const JOIN_GAME_URL = BASE_HTTP + "/game/join_game/";
-export const CREATE_PLAYER_URL = BASE_HTTP + "/game/create_player/";
-export const WEBSOCKET_UPDATES_URL = BASE_SOCKET + "/ws/socket-server";
+export const URLS = {
+  PUBLISH_GAME_URL: `https://${SERVER}/game/publish_game/`,
+  JOIN_GAME_URL: `https://${SERVER}/game/join_game/`,
+  CREATE_PLAYER_URL: `https://${SERVER}/game/create_player/`,
+  WEBSOCKET_UPDATES_URL: `wss://${SERVER}/ws/socket-server`,
+};
 
-export const STORAGE_KEYS = Object.fromEntries(
-  ["player", "offlineUpdatesQueue", "offlineGameState"].map((key) => [
-    key,
-    key,
-  ]),
+const STORAGE_KEYS: { [key: string]: string } = {};
+["player", "offlineUpdatesQueue", "offlineGameState"].forEach(
+  (key) => (STORAGE_KEYS[key] = key),
 );
+export { STORAGE_KEYS };
 
 export default {};

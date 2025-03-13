@@ -11,6 +11,7 @@ import VerticalReel from "./VerticalReel";
 import bingoGames from "../templateFixtures";
 
 const Home = () => {
+  console.log("HOME");
   const [expanded, setExpanded] = useState(false);
   const [playerModal, setPlayerModal] = useState(false);
   const expandedGridset = useRef<string[][]>();

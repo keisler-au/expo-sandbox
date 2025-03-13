@@ -16,7 +16,7 @@ import IconHeader from "./IconHeader";
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from "./FailedConnectionModal";
 import Services from "../services";
-import { STORAGE_KEYS, PUBLISH_GAME_URL } from "../constants";
+import { STORAGE_KEYS, URLS } from "../constants";
 import EditableGrid from "./EditableGrid";
 import { RootStackParamList } from "../types";
 import { reformatGame, saveGameToStorage } from "../utils/gameActions";
@@ -65,9 +65,9 @@ const Publish = ({ route }: PublishProps) => {
   // 2. If it's not working it's not working, the errors should work
   const publishGame = async () => {
     const values = game.slice(0, rows).map((row) => row.slice(0, cols));
-    handleGameEntry(PUBLISH_GAME_URL, { title, values });
+    handleGameEntry(URLS.PUBLISH_GAME_URL, { title, values });
   };
-
+  console.log("PUBLISH");
   return (
     <View style={styles.screenContainer}>
       <IconHeader icons={[{ type: "home-outline", path: "Home" }]} />

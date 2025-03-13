@@ -26,7 +26,7 @@ export interface Task {
   completed: boolean;
   completed_by: Player;
   displayText?: string;
-  displayTextIndex?: number;
+  displayType?: string;
   game_id: number;
   grid_column: number;
   grid_row: number;

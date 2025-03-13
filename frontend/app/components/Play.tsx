@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -15,7 +15,7 @@ import BottomSheet from "react-native-simple-bottom-sheet";
 import { useNetInfo } from "@react-native-community/netinfo";
 // @ts-ignore
 import { isEqual } from "lodash";
-import { WEBSOCKET_UPDATES_URL } from "../constants";
+import { URLS } from "../constants";
 import { Game, Player, Task as Square } from "../types";
 import {
   saveGameToStorage,
@@ -24,6 +24,10 @@ import {
   updateGame,
   verifyEarliestCompletedSquare,
 } from "../utils/gameActions";
+import FailedConnectionModal from "./FailedConnectionModal";
+import RequestService from "../services";
+import GameGrid from "./GameGrid";
+import { useFocusEffect } from "@react-navigation/native";
 
 const webSocketConfig = {
   // TODO: TESTING
@@ -35,10 +39,10 @@ const webSocketConfig = {
     timeout: 60000, // 1 minute, if no response received, the connection is closed
     interval: 25000, // every 25 seconds a ping message will be sent
   },
-  reconnectAttempts: 15,
-  shouldReconnect: () => true,
+  shouldReconnect: (_: any) => true,
+  retryOnError: true,
   reconnectInterval: (attempt: number) =>
-    Math.min(Math.pow(2, attempt) * 1000, 10000),
+    Math.min(Math.pow(2, attempt) * 1000, 12000),
   onOpen: () => console.log("WebSocket connected"),
   onClose: (event: any) =>
     console.log(`WebSocket closed: ${event.reason}, reconnecting...`),
@@ -54,18 +58,29 @@ interface PlayProp {
 }
 const Play = ({ route }: PlayProp) => {
   const [game, setGame] = useState(route.params.game.tasks);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalTask, setModalTask] = useState<Square | null>(null);
   const [completedSquare, setCompletedSquare] = useState<Square | null>(null);
+  const [errorModal, setErrorModal] = useState<string | false>(false);
   const player = route.params.player;
-  const rows = game.length;
-  const cols = game[0].length;
+
   const netInfo = useNetInfo();
   const isOffline = !netInfo.isConnected;
+  // console.log("PLAY");
+  const { sendJsonMessage, lastJsonMessage, getWebSocket } = useWebSocket<{
+    data: any;
+  }>(`${URLS.WEBSOCKET_UPDATES_URL}/${route.params.game.id}/`, {
+    onReconnectStop: () => setErrorModal(RequestService.WEBSOCKET_FAILURE),
+    filter: (message) =>
+      message?.data?.task && message.data.task.completed_by.id !== player.id,
+    ...webSocketConfig,
+  });
 
-  const { sendJsonMessage, lastJsonMessage } = useWebSocket<{ data: any }>(
-    `${WEBSOCKET_UPDATES_URL}/${route.params.game.id}/`,
-    webSocketConfig,
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        const socket = getWebSocket();
+        socket && socket.close();
+      };
+    }, []),
   );
 
   // Receive remote update
@@ -73,8 +88,9 @@ const Play = ({ route }: PlayProp) => {
   // 1. Unit test
   // 2. Earlier completed remote updates won't be applied
   useEffect(() => {
-    const recievedSquare = lastJsonMessage?.data?.task;
-    if (recievedSquare && recievedSquare.completed_by.id !== player.id) {
+    // console.log("Recieving....");
+    if (lastJsonMessage?.data) {
+      const recievedSquare = lastJsonMessage.data.task;
       const earliestSquare = verifyEarliestCompletedSquare(
         recievedSquare,
         game[recievedSquare.grid_row][recievedSquare.grid_column],
@@ -92,16 +108,21 @@ const Play = ({ route }: PlayProp) => {
   // 1. Unit test
   // 2. Offline updates not saved OR sent, Online updates not sent, Offline game not saved
   useEffect(() => {
+    // console.log("Sending....");
     if (isOffline === null) return;
     if (isOffline && completedSquare) {
+      // console.log("1");
       saveToQueue(completedSquare);
       setCompletedSquare(null);
     } else if (completedSquare) {
+      // console.log("2");
       sendJsonMessage(completedSquare);
       setCompletedSquare(null);
     } else if (isOffline) {
+      // console.log("3");
       saveGameToStorage({ ...route.params.game, tasks: game });
     } else {
+      // console.log("4");
       sendSavedQueue(sendJsonMessage);
     }
   }, [isOffline, completedSquare, sendJsonMessage, game, route.params.game]);
@@ -122,13 +143,13 @@ const Play = ({ route }: PlayProp) => {
       saveGameToStorage({ ...route.params.game, tasks: updatedGame });
       setCompletedSquare(square);
     }
-    setModalVisible(false);
+    // setCompletedModal(false);
   };
 
   const taskDisplayChange = (square: Square) => {
-    square.completed && setGame(updateGame(square, player.id, game));
-    setModalTask(square);
-    setModalVisible(!square.completed);
+    setGame(updateGame(square, player.id, game));
+    // setModalTask(square);
+    // setCompletedModal(!square.completed);
   };
 
   return (
@@ -144,71 +165,11 @@ const Play = ({ route }: PlayProp) => {
           {route.params.game.title || `Game${route.params.game.code}`}
         </Text>
       </View>
-      <View style={styles.gridContainer}>
-        {game.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.gridRow}>
-            {row.map((square, colIndex) => {
-              return (
-                <View
-                  key={colIndex + rowIndex}
-                  style={[
-                    styles.squareContainer,
-                    {
-                      height: rows === cols ? 350 / rows : 280 / rows,
-                      width: 350 / cols,
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={completeTaskStyles(square.completed).innerSquare}
-                    onPress={() => taskDisplayChange(square)}
-                  >
-                    <Text style={[styles.gridText]}>
-                      {square.completed && square.displayText
-                        ? square.displayText
-                        : square.value}
-                    </Text>
-                  </TouchableOpacity>
-                  <Modal
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() => setModalVisible(false)}
-                  >
-                    <View style={styles.modalContainer}>
-                      <View style={styles.modalContent}>
-                        <TouchableOpacity
-                          style={styles.closeCross}
-                          onPress={() => setModalVisible(false)}
-                        >
-                          <Ionicons name="close-outline" size={35} />
-                        </TouchableOpacity>
-                        <View style={styles.modalDescriptionTextContainer}>
-                          <Text style={styles.modalDescriptionText}>
-                            {modalTask?.value}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.modalCompletedContainer}
-                          onPress={() => modalTask && taskCompleted(modalTask)}
-                        >
-                          <Text style={styles.modalCompletedText}>
-                            Completed
-                          </Text>
-                          <Feather
-                            name="check-square"
-                            size={25}
-                            color="green"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </Modal>
-                </View>
-              );
-            })}
-          </View>
-        ))}
-      </View>
+      <GameGrid
+        game={game}
+        onComplete={taskCompleted}
+        onDisplayChange={taskDisplayChange}
+      />
 
       <BottomSheet
         isOpen={false}
@@ -230,29 +191,16 @@ const Play = ({ route }: PlayProp) => {
           ))}
         </View>
       </BottomSheet>
+      <FailedConnectionModal
+        displayModal={!!errorModal}
+        message={errorModal}
+        onClose={() => setErrorModal(false)}
+      />
     </View>
   );
 };
 
 export default Play;
-
-const completeTaskStyles = (completed: boolean) =>
-  StyleSheet.create({
-    innerSquare: {
-      width: completed ? "100%" : "80%",
-      height: completed ? "100%" : "80%",
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: completed ? 0 : 1,
-      borderStyle: "solid",
-      borderColor: "black",
-      elevation: 10,
-      shadowOpacity: 0.2,
-      shadowRadius: completed ? 0 : 1,
-      shadowOffset: { width: 0, height: completed ? 0 : 4 },
-      backgroundColor: completed ? "#e0e0e0" : "#ffffff",
-    },
-  });
 
 const styles = StyleSheet.create({
   screenContainer: {
@@ -278,80 +226,17 @@ const styles = StyleSheet.create({
   titleContainer: {
     marginTop: 60,
     height: 25,
-    flexDirection: "row",
-    borderTopColor: "transparent",
-    borderRightColor: "transparent",
-    borderLeftColor: "transparent",
+    // flexDirection: "row",
+    // borderTopColor: "transparent",
+    // borderRightColor: "transparent",
+    // borderLeftColor: "transparent",
     // borderBottomColor: "black",
-    borderWidth: 2,
+    // borderWidth: 2,
   },
   title: {
     marginBottom: 2,
     fontSize: 18,
     textAlign: "center",
-  },
-  gridContainer: {
-    marginTop: 45,
-    borderWidth: 0.5,
-    borderStyle: "solid",
-    borderColor: "black",
-  },
-  gridRow: {
-    flexDirection: "row",
-  },
-  squareContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 0.5,
-    borderStyle: "solid",
-    borderColor: "black",
-    display: "flex",
-  },
-  gridText: {
-    fontSize: 10,
-    textAlign: "center",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    width: 300,
-    height: 300,
-    padding: 20,
-    backgroundColor: "white",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeCross: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    margin: 10,
-  },
-  modalDescriptionTextContainer: {
-    justifyContent: "center",
-    height: "75%",
-    width: "80%",
-  },
-  modalDescriptionText: {
-    fontSize: 30,
-    textAlign: "center",
-  },
-  modalCompletedContainer: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "green",
-    borderRadius: 5,
-    padding: 10,
-    gap: 8,
-  },
-  modalCompletedText: {
-    fontSize: 25,
-    color: "green",
   },
   users: {
     flexDirection: "row",

@@ -13,9 +13,8 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from "./FailedConnectionModal";
 import { getItemAsync } from "expo-secure-store";
-import { JOIN_GAME_URL, STORAGE_KEYS } from "../constants";
+import { STORAGE_KEYS, URLS } from "../constants";
 import useGameEntry from "../utils/useGameEntry";
-import { store } from "expo-router/build/global-state/router-store";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
@@ -86,7 +85,7 @@ const JoinGameInput = () => {
   // 2. If it fails it will clearly be isolate to this function
   const connectToGame = async () => {
     handleGameEntry(
-      JOIN_GAME_URL,
+      URLS.JOIN_GAME_URL,
       { code: code.join("") },
       isOffline,
       previousGame,

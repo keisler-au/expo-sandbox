@@ -5,7 +5,7 @@ import { getItemAsync } from "expo-secure-store";
 import { saveGameToStorage } from "./gameActions";
 import { Game, RootStackParamList } from "../types";
 import { STORAGE_KEYS } from "../constants";
-import Services from "../services";
+import RequestService from "../services";
 
 const useGameEntry = () => {
   const navigation =
@@ -38,9 +38,10 @@ const useGameEntry = () => {
       navigation.navigate("Play", { game: previousGame, player });
     } else {
       data = { ...data, player_id: player.id };
-      const { response, error } = await Services.sendRequest(url, data);
+      const { response, error } = await RequestService.sendRequest(url, data);
       if (response && response?.ok) {
         saveGameToStorage(response.game);
+        // console.log("RESPONSE = ", response.game.tasks[4]);
         navigation.navigate("Play", { game: response.game, player });
       }
       setError(error);

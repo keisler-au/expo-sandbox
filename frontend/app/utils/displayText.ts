@@ -1,3 +1,4 @@
+import CompleteTaskModal from "../components/CompleteTaskModal";
 import { Player, Task as Square } from "../types";
 
 export const formatTime = (dateString: string) => {
@@ -9,42 +10,37 @@ export const formatTime = (dateString: string) => {
   });
 };
 
-interface SquareDisplayProps {
-  displayTextIndex?: any;
-  completed_by: Player;
-}
-const getStartingIndex = (
-  { displayTextIndex, completed_by }: SquareDisplayProps,
+const getFirstType = (
+  { completed_by }: { completed_by: Player },
   playerId: number,
-) => {
-  // Locally the displayText is first set in these scenarios:
-  // 1. Task locally completed, displayText set upon completion, next sq touch moves index along
-  // 2. Task remotely completed, displayText has not been set, next sq touch sets index
-  // For remotely completed sqrs first touch needs set index +1 compared to locally completed
-  if (displayTextIndex == null && completed_by.id === playerId) return 2;
-  if (displayTextIndex == null) return 0;
-  return displayTextIndex;
+) => (completed_by.id === playerId ? "value" : "completed_by");
+
+const getNextType = (attr: string) => {
+  const displayOrder = ["value", "completed_by", "last_updated"];
+  const nextIndex = (displayOrder.indexOf(attr) + 1) % displayOrder.length;
+  return displayOrder[nextIndex];
 };
 
-const getDisplayText = (index: number, value: any) => {
-  switch (index) {
-    case 2:
-      return formatTime(value);
-    case 1:
-      return value.name;
-    default:
-      return value;
+const formatDisplayText = (attrType: string, attrValue: any) => {
+  switch (attrType) {
+    case "last_updated":
+      return formatTime(attrValue);
+    case "completed_by":
+      return attrValue.name;
+    case "value":
+      return attrValue;
   }
 };
 // TODO: TESTING
 // 1. Unit test
 // 2. Display break
 export const addDisplayTextDetails = (square: Square, playerId: number) => {
-  const displays = ["value", "completed_by", "last_updated"];
-  const startingIndex = getStartingIndex(square, playerId);
-  const index = (startingIndex + 1) % displays.length;
-  const displayText = getDisplayText(index, square[displays[index]]);
-  return { ...square, displayText, displayTextIndex: index };
+  const displayType =
+    square.displayType == null
+      ? getFirstType(square, playerId)
+      : getNextType(square.displayType);
+  const displayText = formatDisplayText(displayType, square[displayType]);
+  return { ...square, displayText, displayType };
 };
 
 export default {};

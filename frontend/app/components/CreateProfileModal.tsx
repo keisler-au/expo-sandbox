@@ -12,8 +12,8 @@ import {
   ActivityIndicator,
   NativeSyntheticEvent,
 } from "react-native";
-import Services from "../services";
-import { CREATE_PLAYER_URL, STORAGE_KEYS } from "../constants";
+import RequestService from "../services";
+import { STORAGE_KEYS, URLS } from "../constants";
 import FailedConnectionModal from "./FailedConnectionModal";
 
 interface CreatePlayerProps {
@@ -39,8 +39,8 @@ const CreatePlayerModal = ({ displayModal, onClose }: CreatePlayerProps) => {
   const handleSubmit = async () => {
     if (loading) return;
     setLoading(true);
-    const { response, error } = await Services.sendRequest(
-      CREATE_PLAYER_URL,
+    const { response, error } = await RequestService.sendRequest(
+      URLS.CREATE_PLAYER_URL,
       name,
     );
     if (response && response?.ok) {

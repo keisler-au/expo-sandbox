@@ -40,6 +40,7 @@ export const updateGame = (
   square = addDisplayTextDetails(square, playerId);
   let updated = game.map((row) => [...row]);
   updated[square.grid_row][square.grid_column] = square;
+
   return updated;
 };
 

@@ -1,11 +1,10 @@
-import { getItem, getItemAsync } from "expo-secure-store";
-import { STORAGE_KEYS } from "./constants";
-
-class Services {
+class RequestService {
   static FAILED_CONNECTION =
     "We failed to connect to the server. Please try again.";
   static NOT_FOUND =
     "The entry used did not connect, please check it is correct and try again.";
+  static WEBSOCKET_FAILURE =
+    "We failed to connect to the server. If the issue re-occurs please report it via Settings";
 
   static async sendRequest(url: string, data: any) {
     let response;
@@ -17,7 +16,7 @@ class Services {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data }),
       });
-    } catch (e) {
+    } catch (e: any) {
       console.log(e.toString());
       error = this.FAILED_CONNECTION;
     }
@@ -35,4 +34,4 @@ class Services {
   }
 }
 
-export default Services;
+export default RequestService;
