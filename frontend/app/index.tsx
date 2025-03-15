@@ -1,10 +1,17 @@
 import { useEffect } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
+import * as Sentry from "sentry-expo";
 import Home from "./components/Home";
 import Publish from "./components/Publish";
 import Settings from "./components/Settings";
 import Play from "./components/Play";
+import { URLS } from "./constants";
+
+Sentry.init({
+  dsn: URLS.SENTRY_DNS,
+  sendDefaultPii: true,
+});
 
 const Stack = createStackNavigator();
 

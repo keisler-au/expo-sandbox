@@ -11,7 +11,6 @@ import VerticalReel from "./VerticalReel";
 import bingoGames from "../templateFixtures";
 
 const Home = () => {
-  console.log("HOME");
   const [expanded, setExpanded] = useState(false);
   const [playerModal, setPlayerModal] = useState(false);
   const expandedGridset = useRef<string[][]>();
@@ -31,7 +30,6 @@ const Home = () => {
     expandedGridset.current = bingoGames[gridset];
     setExpanded(!expanded);
   };
-
   return (
     <SafeAreaView style={styles.background}>
       <IconHeader icons={icons} onPress={() => setPlayerModal(true)} />

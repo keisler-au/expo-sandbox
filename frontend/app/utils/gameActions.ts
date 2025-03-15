@@ -65,9 +65,9 @@ export const verifyEarliestCompletedSquare = (
   }
 };
 
-export const reformatGame = (game: string[], rows: number, cols: number) =>
-  Array.from({ length: rows }, (_, rowIndex) =>
-    game.slice(rowIndex * cols, (rowIndex + 1) * rows),
+export const reformatGame = (game: string[]) =>
+  Array.from({ length: 5 }, (_, rowIndex) =>
+    game.slice(rowIndex * 5, (rowIndex + 1) * 5),
   );
 
 export default {};

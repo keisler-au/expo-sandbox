@@ -8,37 +8,34 @@ import {
   Text,
 } from "react-native";
 import { getItemAsync } from "expo-secure-store";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+} from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import IconHeader from "./IconHeader";
 
 import CreateProfileModal from "./CreateProfileModal";
 import FailedConnectionModal from "./FailedConnectionModal";
-import Services from "../services";
-import { STORAGE_KEYS, URLS } from "../constants";
+import { URLS } from "../constants";
 import EditableGrid from "./EditableGrid";
 import { RootStackParamList } from "../types";
-import { reformatGame, saveGameToStorage } from "../utils/gameActions";
+import { reformatGame } from "../utils/gameActions";
 import useGameEntry from "../utils/useGameEntry";
+import { StackScreenProps } from "@react-navigation/stack";
 
 const MAIN_FONT_FAMILY = "Verdana";
 
 const GRID_OPTIONS = ["5x5", "4x5", "4x4", "3x4", "3x3"];
 
-interface PublishProps {
-  route: {
-    params: {
-      game: string[];
-    };
-  };
-}
-
+type PublishProps = StackScreenProps<RootStackParamList, "Publish">;
 const Publish = ({ route }: PublishProps) => {
   const [selectedGridSize, setSelectedGridSize] = useState("5x5");
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
-  const [game, setGame] = useState(reformatGame(route.params.game, rows, cols));
+  const [game, setGame] = useState(reformatGame(route.params.game));
   const [title, setTitle] = useState("");
   const {
     loading,
@@ -67,7 +64,7 @@ const Publish = ({ route }: PublishProps) => {
     const values = game.slice(0, rows).map((row) => row.slice(0, cols));
     handleGameEntry(URLS.PUBLISH_GAME_URL, { title, values });
   };
-  console.log("PUBLISH");
+
   return (
     <View style={styles.screenContainer}>
       <IconHeader icons={[{ type: "home-outline", path: "Home" }]} />

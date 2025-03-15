@@ -1,12 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Share,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Share } from "react-native";
 import useWebSocket from "react-use-websocket";
 import IconHeader from "./IconHeader";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -16,7 +9,7 @@ import { useNetInfo } from "@react-native-community/netinfo";
 // @ts-ignore
 import { isEqual } from "lodash";
 import { URLS } from "../constants";
-import { Game, Player, Task as Square } from "../types";
+import { Game, Player, RootStackParamList, Task as Square } from "../types";
 import {
   saveGameToStorage,
   saveToQueue,
@@ -28,6 +21,7 @@ import FailedConnectionModal from "./FailedConnectionModal";
 import RequestService from "../services";
 import GameGrid from "./GameGrid";
 import { useFocusEffect } from "@react-navigation/native";
+import { StackScreenProps } from "@react-navigation/stack";
 
 const webSocketConfig = {
   // TODO: TESTING
@@ -48,32 +42,23 @@ const webSocketConfig = {
     console.log(`WebSocket closed: ${event.reason}, reconnecting...`),
 };
 
-interface PlayProp {
-  route: {
-    params: {
-      game: Game;
-      player: Player;
-    };
-  };
-}
-const Play = ({ route }: PlayProp) => {
+type PlayProps = StackScreenProps<RootStackParamList, "Play">;
+const Play = ({ route }: PlayProps) => {
   const [game, setGame] = useState(route.params.game.tasks);
   const [completedSquare, setCompletedSquare] = useState<Square | null>(null);
   const [errorModal, setErrorModal] = useState<string | false>(false);
   const player = route.params.player;
-
   const netInfo = useNetInfo();
   const isOffline = !netInfo.isConnected;
-  // console.log("PLAY");
+
   const { sendJsonMessage, lastJsonMessage, getWebSocket } = useWebSocket<{
     data: any;
-  }>(`${URLS.WEBSOCKET_UPDATES_URL}/${route.params.game.id}/`, {
+  }>(`${URLS.WEBSOCKET_UPDATES_URL}/${route.params.game.id}/${player.id}/`, {
     onReconnectStop: () => setErrorModal(RequestService.WEBSOCKET_FAILURE),
     filter: (message) =>
       message?.data?.task && message.data.task.completed_by.id !== player.id,
     ...webSocketConfig,
   });
-
   useFocusEffect(
     React.useCallback(() => {
       return () => {
@@ -88,7 +73,6 @@ const Play = ({ route }: PlayProp) => {
   // 1. Unit test
   // 2. Earlier completed remote updates won't be applied
   useEffect(() => {
-    // console.log("Recieving....");
     if (lastJsonMessage?.data) {
       const recievedSquare = lastJsonMessage.data.task;
       const earliestSquare = verifyEarliestCompletedSquare(
@@ -108,21 +92,16 @@ const Play = ({ route }: PlayProp) => {
   // 1. Unit test
   // 2. Offline updates not saved OR sent, Online updates not sent, Offline game not saved
   useEffect(() => {
-    // console.log("Sending....");
     if (isOffline === null) return;
     if (isOffline && completedSquare) {
-      // console.log("1");
       saveToQueue(completedSquare);
       setCompletedSquare(null);
     } else if (completedSquare) {
-      // console.log("2");
       sendJsonMessage(completedSquare);
       setCompletedSquare(null);
     } else if (isOffline) {
-      // console.log("3");
       saveGameToStorage({ ...route.params.game, tasks: game });
     } else {
-      // console.log("4");
       sendSavedQueue(sendJsonMessage);
     }
   }, [isOffline, completedSquare, sendJsonMessage, game, route.params.game]);
@@ -143,13 +122,10 @@ const Play = ({ route }: PlayProp) => {
       saveGameToStorage({ ...route.params.game, tasks: updatedGame });
       setCompletedSquare(square);
     }
-    // setCompletedModal(false);
   };
 
   const taskDisplayChange = (square: Square) => {
     setGame(updateGame(square, player.id, game));
-    // setModalTask(square);
-    // setCompletedModal(!square.completed);
   };
 
   return (
@@ -170,7 +146,6 @@ const Play = ({ route }: PlayProp) => {
         onComplete={taskCompleted}
         onDisplayChange={taskDisplayChange}
       />
-
       <BottomSheet
         isOpen={false}
         sliderMinHeight={40}
@@ -226,12 +201,6 @@ const styles = StyleSheet.create({
   titleContainer: {
     marginTop: 60,
     height: 25,
-    // flexDirection: "row",
-    // borderTopColor: "transparent",
-    // borderRightColor: "transparent",
-    // borderLeftColor: "transparent",
-    // borderBottomColor: "black",
-    // borderWidth: 2,
   },
   title: {
     marginBottom: 2,

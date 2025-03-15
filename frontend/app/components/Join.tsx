@@ -42,9 +42,9 @@ const JoinGameInput = () => {
       const game = JSON.parse(storedGame || "{}");
       if (game) {
         setPreviousGame(game);
-        const threeHours = 3 * (60 * 60 * 1000);
+        const twentyFourHours = 24 * (60 * 60 * 1000);
         const previousSave = new Date(game.lastSaved).getTime();
-        if (new Date().getTime() - previousSave < threeHours) {
+        if (new Date().getTime() - previousSave < twentyFourHours) {
           setCode(game.code.split(""));
           setSubmit(true);
         }

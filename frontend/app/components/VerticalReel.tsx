@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: GRID_SIZE + 2,
     width: GRID_SIZE + 2,
+    flexDirection: "row",
     flexWrap: "wrap",
     borderRadius: 5,
   },

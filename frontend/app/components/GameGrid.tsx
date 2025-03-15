@@ -14,13 +14,12 @@ const GameGrid = ({ game, onDisplayChange, onComplete }: GridProps) => {
   const polygonHeight =
     (game.length === game[0].length ? 350 : 280) / game.length;
   const polygonWidth = 350 / game[0].length;
-  // console.log("GAME = ", game[4]);
+
   return (
     <View style={styles.gridContainer}>
       {game.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.gridRow}>
           {row.map((square, colIndex) => {
-            // console.log("square = ", square);
             return (
               <View
                 key={colIndex + rowIndex}

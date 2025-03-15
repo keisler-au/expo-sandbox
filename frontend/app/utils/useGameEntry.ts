@@ -39,10 +39,10 @@ const useGameEntry = () => {
     } else {
       data = { ...data, player_id: player.id };
       const { response, error } = await RequestService.sendRequest(url, data);
-      if (response && response?.ok) {
-        saveGameToStorage(response.game);
-        // console.log("RESPONSE = ", response.game.tasks[4]);
-        navigation.navigate("Play", { game: response.game, player });
+      if (response?.ok && !error) {
+        const game = (await response.json()).game;
+        saveGameToStorage(game);
+        navigation.navigate("Play", { game, player });
       }
       setError(error);
     }
